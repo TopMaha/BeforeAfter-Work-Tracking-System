@@ -394,6 +394,28 @@ body.desktop-report .view{max-width:1180px}
 @media(min-width:760px){
   .stat-grid{grid-template-columns:repeat(4,1fr)}
 }
+
+/* ============================ PRINT / PDF ============================ */
+#printArea{display:none}
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+  body{background:#fff!important;color:#000}
+  #login,#app,#nav,.modal-back,#toasts,.appbar{display:none!important}
+  #printArea{display:block!important;font-family:var(--font)}
+  #printArea .pr-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2563eb;padding-bottom:10px;margin-bottom:14px}
+  #printArea h1{font-size:20px;margin:0;color:#1e3a8a}
+  #printArea .pr-sub{font-size:12px;color:#555;margin-top:3px}
+  #printArea .pr-stats{display:flex;gap:14px;font-size:12px}
+  #printArea .pr-stats span{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px}
+  #printArea .pr-stats b{color:#1d4ed8;font-size:15px;margin-left:4px}
+  #printArea .pr-stats .over b{color:#dc2626}
+  #printArea table.pr-table{width:100%;border-collapse:collapse;font-size:10.5px}
+  #printArea .pr-table th{background:#1e3a8a;color:#fff;padding:7px 6px;text-align:left;font-size:10px}
+  #printArea .pr-table td{border:1px solid #d0d7e2;padding:5px 6px;vertical-align:top}
+  #printArea .pr-table tr:nth-child(even) td{background:#f6f9ff}
+  #printArea .pr-table img{width:34px;height:44px;object-fit:cover;border-radius:4px;display:inline-block;margin-right:2px}
+  #printArea small{color:#777;font-size:9px}
+}
 </style>
 </head>
 <body data-theme="light">
@@ -464,6 +486,7 @@ body.desktop-report .view{max-width:1180px}
 <!-- modal + toasts -->
 <div class="modal-back" id="modalBack"><div class="modal" id="modal"></div></div>
 <div id="toasts"></div>
+<div id="printArea"></div>
 <canvas id="mergeCanvas" class="hidden"></canvas>
 
 <script>
@@ -885,6 +908,10 @@ async function openTask(id){
       <button class="btn btn-green" id="btnApprove" style="flex:2">✓ อนุมัติ & ปิดงาน</button></div>`:''}
     ${(!canReview && canClose && t.status==='open')?`<div style="font-size:12.5px;color:var(--text-3);text-align:center;margin-bottom:8px">รอพนักงานส่งรูป After</div>`:''}
 
+    ${(ME.role==='supervisor' && t.after)?`<button class="btn btn-ghost" id="btnLine" style="width:100%;margin-bottom:6px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+      ส่งรายงานเข้า LINE</button>`:''}
+
     <div class="section-title">ไทม์ไลน์ (Audit Trail)</div>
     <div class="timeline">
       ${logs.map(l=>`<div class="tl"><div class="tld"></div><div class="tlc"><b>${LBL[l.type]||l.type} · ${esc(l.name)}</b><span>${fmtDateTime(l.at)}</span></div></div>`).join('')||'<div style="color:var(--text-3);font-size:13px">—</div>'}
@@ -926,6 +953,7 @@ async function openTask(id){
   };
   const rp=$('#btnReopen'); if(rp) rp.onclick=()=>{ t.status='open'; logAdd(t.id,'reopen'); save();
     closeModal(); toast('ตีกลับให้แก้ไขใหม่','info'); go(current); };
+  const ln=$('#btnLine'); if(ln) ln.onclick=()=>sendLine(t.id);
   // comment
   const send=()=>{ const v=$('#cmtInput').value.trim(); if(!v)return;
     t.comments.push({id:uid(),userId:ME.id,name:ME.name,text:v,at:new Date().toISOString()}); save();
@@ -1014,8 +1042,8 @@ VIEWS.report = (root)=>{
       <span>รายการ (<span id="repCount">0</span>)</span>
       <div style="display:flex;gap:6px">
         <button class="sw-mini" id="btnDesktop" title="มุมมองคอมพิวเตอร์"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
-        <button class="sw-mini" id="btnCsv" title="ดาวน์โหลด CSV"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></button>
-        <button class="sw-mini" id="btnPrint" title="พิมพ์"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+        <button class="sw-mini" id="btnXlsx" title="ดาวน์โหลด Excel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg></button>
+        <button class="sw-mini" id="btnPdf" title="PDF / พิมพ์"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
       </div>
     </div>
     <div id="repList"></div>`;
@@ -1063,8 +1091,8 @@ VIEWS.report = (root)=>{
     document.body.classList.toggle('desktop-report',REP_FILTER.desktop);
     $('#btnDesktop',root).style.background=REP_FILTER.desktop?'var(--primary)':''; $('#btnDesktop',root).style.color=REP_FILTER.desktop?'#fff':'';
     toast(REP_FILTER.desktop?'มุมมองคอมพิวเตอร์':'มุมมองมือถือ','info'); refresh(); };
-  $('#btnCsv',root).onclick=()=>exportCsv(filtered());
-  $('#btnPrint',root).onclick=()=>window.print();
+  $('#btnXlsx',root).onclick=()=>exportXlsx(filtered());
+  $('#btnPdf',root).onclick=()=>printReport(filtered());
   refresh();
 };
 function reportCard(t){
@@ -1098,9 +1126,108 @@ function exportCsv(arr){
     return [t.code,t.area,t.detail,cat?cat.name:'',STATUS[t.status],a?a.name:'',t.dueDate||'',o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']
       .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','); });
   const csv='﻿'+head.join(',')+'\n'+rows.join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const u=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=u; a.download='ba-report-'+todayISO()+'.csv'; a.click(); URL.revokeObjectURL(u);
+  downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'ba-report-'+todayISO()+'.csv');
   toast('ดาวน์โหลด CSV แล้ว','ok');
+}
+function downloadBlob(blob,name){ const u=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1500); }
+
+/* ---------- Worker API helper (ใช้เมื่อ CONFIG.API_BASE ถูกตั้ง) ---------- */
+async function api(path,opts={}){
+  if(DEMO) throw new Error('demo');
+  const res=await fetch(CONFIG.API_BASE.replace(/\/$/,'')+path,
+    { headers:{'Content-Type':'application/json','X-User-Id':ME?ME.id:''}, ...opts });
+  let data=null; try{ data=await res.json(); }catch(e){}
+  if(!res.ok) throw new Error((data&&data.error)||('HTTP '+res.status));
+  return data;
+}
+
+/* ---------- รายงานรวม (สรุปงานของ array) ---------- */
+function reportRows(arr){
+  return arr.map(t=>{ const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
+    return [t.code,t.area,t.detail||'',cat?cat.name:'',STATUS[t.status],a?a.name:'',t.dueDate||'',
+      o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']; });
+}
+const REPORT_HEAD=['รหัส','พื้นที่','รายละเอียด','หมวด','สถานะ','ผู้รับผิดชอบ','ครบกำหนด','เปิดโดย','เปิดเมื่อ','ปิดโดย','ปิดเมื่อ'];
+
+/* ---------- Excel .xlsx (self-contained, ไม่ใช้ไลบรารี) ---------- */
+function crc32(b){ let c; if(!crc32.t){ crc32.t=new Uint32Array(256);
+    for(let n=0;n<256;n++){ c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; crc32.t[n]=c>>>0; } }
+  let crc=-1; for(let i=0;i<b.length;i++) crc=(crc>>>8)^crc32.t[(crc^b[i])&0xFF]; return (crc^-1)>>>0; }
+function zipStore(files){ // [{name, data:Uint8Array}] -> Blob (zip, stored/no compression)
+  const u16=n=>[n&255,(n>>8)&255], u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255];
+  const enc=new TextEncoder(), parts=[], central=[]; let offset=0;
+  for(const f of files){ const name=enc.encode(f.name), data=f.data, crc=crc32(data);
+    const lh=[0x50,0x4b,3,4,...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)];
+    parts.push(new Uint8Array(lh),name,data);
+    central.push({name,crc,len:data.length,offset}); offset+=lh.length+name.length+data.length; }
+  const cd=[]; let cdSize=0;
+  for(const c of central){ const h=[0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(c.crc),...u32(c.len),...u32(c.len),...u16(c.name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(c.offset)];
+    cd.push(new Uint8Array(h),c.name); cdSize+=h.length+c.name.length; }
+  const end=[0x50,0x4b,5,6,...u16(0),...u16(0),...u16(central.length),...u16(central.length),...u32(cdSize),...u32(offset),...u16(0)];
+  return new Blob([...parts,...cd,new Uint8Array(end)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function exportXlsx(arr){
+  const rows=[REPORT_HEAD,...reportRows(arr)];
+  const cell=v=>`<c t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+  const sheetData=rows.map((r,i)=>`<row r="${i+1}">${r.map(cell).join('')}</row>`).join('');
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${sheetData}</sheetData></worksheet>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Report" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
+  const E=new TextEncoder();
+  const files=[
+    {name:'[Content_Types].xml',data:E.encode(ct)},
+    {name:'_rels/.rels',data:E.encode(rels)},
+    {name:'xl/workbook.xml',data:E.encode(wb)},
+    {name:'xl/_rels/workbook.xml.rels',data:E.encode(wbr)},
+    {name:'xl/worksheets/sheet1.xml',data:E.encode(sheet)},
+  ];
+  downloadBlob(zipStore(files),'ba-report-'+todayISO()+'.xlsx');
+  toast('ดาวน์โหลด Excel แล้ว','ok');
+}
+
+/* ---------- PDF / พิมพ์ (เรนเดอร์ไทยได้สมบูรณ์ผ่าน print ของเบราว์เซอร์) ---------- */
+async function printReport(arr){
+  const area=$('#printArea');
+  const open=arr.filter(x=>x.status==='open').length, pend=arr.filter(x=>x.status==='pending').length,
+    closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
+  const rowsHtml=await Promise.all(arr.map(async(t,i)=>{
+    const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
+    const b=await IMG.url(t.before), af=await IMG.url(t.after);
+    return `<tr>
+      <td>${i+1}</td><td><b>${t.code}</b></td>
+      <td>${b?`<img src="${b}">`:'—'} ${af?`<img src="${af}">`:'—'}</td>
+      <td>${esc(t.area)}</td><td>${cat?esc(cat.name):'-'}</td><td>${STATUS[t.status]}${isOverdue(t)?' (เกิน)':''}</td>
+      <td>${a?esc(a.name):'-'}</td><td>${fmtDate(t.dueDate)}</td>
+      <td>${o?esc(o.name.split(' ')[0]):'-'}<br><small>${fmtDate(t.createdAt)}</small></td>
+      <td>${cl?esc(cl.name.split(' ')[0]):'-'}<br><small>${t.closedAt?fmtDate(t.closedAt):'-'}</small></td>
+    </tr>`; }));
+  area.innerHTML=`
+    <div class="pr-head">
+      <div><h1>รายงานงานแก้ไข Before/After</h1>
+        <div class="pr-sub">พิมพ์เมื่อ ${fmtDateTime(new Date().toISOString())} · รวม ${arr.length} งาน</div></div>
+      <div class="pr-stats">
+        <span>รอแก้ไข <b>${open}</b></span><span>รอตรวจ <b>${pend}</b></span>
+        <span>ปิดงาน <b>${closed}</b></span><span class="over">เกินกำหนด <b>${over}</b></span>
+      </div>
+    </div>
+    <table class="pr-table"><thead><tr>
+      <th>#</th><th>รหัส</th><th>Before / After</th><th>พื้นที่</th><th>หมวด</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>ครบกำหนด</th><th>เปิดงาน</th><th>ปิดงาน</th>
+    </tr></thead><tbody>${rowsHtml.join('')||'<tr><td colspan="10" style="text-align:center;padding:20px">ไม่มีข้อมูล</td></tr>'}</tbody></table>`;
+  // รอรูปโหลดก่อนพิมพ์
+  const imgs=[...area.querySelectorAll('img')];
+  await Promise.all(imgs.map(im=> im.complete?Promise.resolve():new Promise(r=>{im.onload=im.onerror=r;})));
+  window.print();
+}
+
+/* ---------- ส่งรายงานเข้า LINE ---------- */
+async function sendLine(taskId){
+  if(DEMO){ toast('โหมด Demo: ต้อง deploy Worker + ตั้งค่า LINE ก่อน (ดู DEPLOY.md)','info'); return; }
+  try{ const r=await api('/api/line/notify',{method:'POST',body:JSON.stringify({taskId})});
+    toast(r&&r.error?('LINE: '+r.error):'ส่งเข้า LINE แล้ว', r&&r.error?'err':'ok');
+  }catch(e){ toast('ส่ง LINE ไม่สำเร็จ: '+e.message,'err'); }
 }
 
 /* ---------- Settings ---------- */
@@ -1150,10 +1277,20 @@ VIEWS.settings = (root)=>{
   cl.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editCat(b.dataset.edit));
   $('#addCat',root).onclick=()=>editCat(null);
   // line
-  $('#ln-group',root).addEventListener('change',e=>{ S.line.groupId=e.target.value.trim(); save(); });
-  $('#ln-notify',root).addEventListener('change',e=>{ S.line.notify=e.target.checked; save(); });
-  $('#ln-test',root).onclick=()=>{ if(DEMO){ toast('โหมด Demo: ต้อง deploy Worker ก่อน (ดู DEPLOY.md)','info'); }
-    else toast('ส่งข้อความทดสอบแล้ว','ok'); };
+  $('#ln-group',root).addEventListener('change',e=>{ S.line.groupId=e.target.value.trim(); save();
+    if(!DEMO) api('/api/line/config',{method:'POST',body:JSON.stringify({groupId:S.line.groupId})}).catch(()=>{}); });
+  $('#ln-notify',root).addEventListener('change',e=>{ S.line.notify=e.target.checked; save();
+    if(!DEMO) api('/api/line/config',{method:'POST',body:JSON.stringify({notify:S.line.notify})}).catch(()=>{}); });
+  $('#ln-test',root).onclick=async()=>{
+    if(DEMO){ toast('โหมด Demo: ต้อง deploy Worker + ตั้งค่า LINE ก่อน (ดู DEPLOY.md)','info'); return; }
+    const btn=$('#ln-test',root); btn.disabled=true;
+    try{ const r=await api('/api/line/test',{method:'POST'});
+      toast(r&&r.error?('LINE: '+r.error):'ส่งข้อความทดสอบสำเร็จ', r&&r.error?'err':'ok');
+    }catch(e){ toast('เชื่อมต่อไม่ได้: '+e.message,'err'); } finally{ btn.disabled=false; } };
+  // โหลด groupId/กลุ่มที่ดักได้จาก Worker (เฉพาะ online)
+  if(!DEMO){ api('/api/line/config').then(cfg=>{ if(cfg.groupId) $('#ln-group',root).value=cfg.groupId;
+    if(cfg.groups&&cfg.groups.length){ const box=el(`<div style="margin-top:10px;font-size:12px;color:var(--text-2)">กลุ่มที่ดักได้: ${cfg.groups.map(g=>esc(g.group_id)).join(', ')}</div>`);
+      $('#ln-group',root).parentElement.appendChild(box); } }).catch(()=>{}); }
   // general
   $('#setTheme',root).onclick=()=>{ applyTheme(S.theme==='dark'?'light':'dark'); go('settings'); };
   $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
