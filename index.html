@@ -527,16 +527,27 @@ const IMG = (() => {
     r.onupgradeneeded = () => r.result.createObjectStore('img');
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   }));
+  const idbPut=async(id,blob)=>{ const db=await open(); return new Promise((res,rej)=>{
+    const tx=db.transaction('img','readwrite'); tx.objectStore('img').put(blob,id);
+    tx.oncomplete=()=>res(id); tx.onerror=()=>rej(tx.error); }); };
+  const idbGet=async(id)=>{ const db=await open(); return new Promise((res,rej)=>{
+    const tx=db.transaction('img','readonly'); const rq=tx.objectStore('img').get(id);
+    rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); }); };
+  const remote=(id)=>CONFIG.API_BASE.replace(/\/$/,'')+'/api/img/'+encodeURIComponent(id);
   const urlCache = new Map();
   return {
-    async put(id, blob){ const db=await open(); return new Promise((res,rej)=>{
-      const tx=db.transaction('img','readwrite'); tx.objectStore('img').put(blob,id);
-      tx.oncomplete=()=>res(id); tx.onerror=()=>rej(tx.error); }); },
-    async getBlob(id){ const db=await open(); return new Promise((res,rej)=>{
-      const tx=db.transaction('img','readonly'); const rq=tx.objectStore('img').get(id);
-      rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); }); },
-    async url(id){ if(!id) return null; if(urlCache.has(id)) return urlCache.get(id);
-      const b=await this.getBlob(id); if(!b) return null;
+    // เก็บรูป: cache ลง IndexedDB เสมอ (ใช้แสดง + เป็น source ของ Canvas), online = อัปขึ้น R2 ด้วย
+    async put(id, blob){ await idbPut(id,blob);
+      if(!DEMO){ try{ await fetch(remote(id),{method:'PUT',headers:{'Content-Type':blob.type||'image/jpeg'},body:blob}); }
+        catch(e){ console.warn('R2 upload failed',e); } }
+      return id; },
+    async getBlob(id){ const local=await idbGet(id); if(local) return local;
+      if(!DEMO){ try{ const r=await fetch(remote(id)); if(r.ok){ const b=await r.blob(); idbPut(id,b); return b; } }catch(e){} }
+      return null; },
+    async url(id){ if(!id) return null;
+      if(!DEMO) return remote(id);                 // online: ทุกคนโหลดรูปจาก R2 ได้
+      if(urlCache.has(id)) return urlCache.get(id);
+      const b=await idbGet(id); if(!b) return null;
       const u=URL.createObjectURL(b); urlCache.set(id,u); return u; },
     async del(id){ if(!id) return; const db=await open(); db.transaction('img','readwrite').objectStore('img').delete(id);
       if(urlCache.has(id)){ URL.revokeObjectURL(urlCache.get(id)); urlCache.delete(id); } }
@@ -609,6 +620,64 @@ function userById(id){ return S.users.find(u=>u.id===id); }
 function catById(id){ return S.categories.find(c=>c.id===id); }
 function logAdd(taskId,type){ S.logs.push({id:uid(),taskId,type,userId:ME.id,name:ME.name,at:new Date().toISOString()}); }
 
+/* ======================= DATA LAYER (demo ↔ Worker API) =======================
+   DEMO (CONFIG.API_BASE ว่าง) : เก็บใน localStorage + IndexedDB
+   ONLINE : อ่าน/เขียนผ่าน Worker (D1 + R2) ทุกคนเห็นข้อมูลชุดเดียวกัน
+   ============================================================================= */
+const DATA = {
+  async bootstrap(){ if(DEMO) return; const b=await api('/api/bootstrap');
+    S.users=b.users||[]; S.categories=b.categories||[]; S.tasks=b.tasks||[]; },
+  async refresh(){ if(DEMO) return; const b=await api('/api/tasks'); S.tasks=b.tasks||[]; },
+
+  async createTask(p, beforeBlob){
+    if(DEMO){ const beforeId=uid(); await IMG.put(beforeId,beforeBlob);
+      const t={ id:uid(), code:nextCode(), category:p.category, area:p.area, detail:p.detail,
+        assigneeId:p.assigneeId, createdBy:ME.id, dueDate:p.dueDate, status:'open',
+        before:beforeId, after:null, compare:null,
+        createdAt:new Date().toISOString(), submittedAt:null, closedAt:null, closedBy:null, comments:[] };
+      S.tasks.push(t); logAdd(t.id,'open'); save(); return t; }
+    const key='before-'+uid(); await IMG.put(key,beforeBlob);
+    const r=await api('/api/tasks',{method:'POST',body:JSON.stringify({...p, before:key, createdBy:ME.id, createdByName:ME.name})});
+    await this.refresh(); return S.tasks.find(x=>x.id===r.id)||r; },
+
+  async submitAfter(t, afterBlob){
+    if(afterBlob){ const key=DEMO?uid():('after-'+uid()); await IMG.put(key,afterBlob); t.after=key; }
+    t.status='pending'; t.submittedAt=new Date().toISOString(); await buildCompare(t);
+    if(DEMO){ logAdd(t.id,'submit'); save(); return; }
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({after:t.after,compare:t.compare,status:'pending',submittedAt:t.submittedAt,_log:'submit',_userId:ME.id,_userName:ME.name})});
+    await this.refresh(); },
+
+  async closeTask(t){ if(!t.compare) await buildCompare(t);
+    t.status='closed'; t.closedAt=new Date().toISOString(); t.closedBy=ME.id;
+    if(DEMO){ logAdd(t.id,'close'); save(); return; }
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({compare:t.compare,status:'closed',closedAt:t.closedAt,closedBy:ME.id,_log:'close',_userId:ME.id,_userName:ME.name})});
+    await this.refresh(); },
+
+  async reopenTask(t){ t.status='open';
+    if(DEMO){ logAdd(t.id,'reopen'); save(); return; }
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({status:'open',_log:'reopen',_userId:ME.id,_userName:ME.name})});
+    await this.refresh(); },
+
+  async removeTask(t){
+    if(DEMO){ IMG.del(t.before);IMG.del(t.after);IMG.del(t.compare);
+      S.tasks=S.tasks.filter(x=>x.id!==t.id); S.logs=S.logs.filter(l=>l.taskId!==t.id); save(); return; }
+    await api('/api/tasks/'+t.id,{method:'DELETE'}); await this.refresh(); },
+
+  async addComment(t, text){
+    if(DEMO){ t.comments.push({id:uid(),userId:ME.id,name:ME.name,text,at:new Date().toISOString()}); save(); return; }
+    await api('/api/tasks/'+t.id+'/comment',{method:'POST',body:JSON.stringify({userId:ME.id,name:ME.name,text})});
+    await this.refresh(); },
+
+  async saveUser(p){ if(DEMO){ if(p.id){ Object.assign(userById(p.id),p); } else S.users.push({id:uid(),...p}); save(); return; }
+    await api('/api/users',{method:'POST',body:JSON.stringify(p)}); await this.bootstrap(); },
+  async delUser(id){ if(DEMO){ S.users=S.users.filter(x=>x.id!==id); save(); return; }
+    await api('/api/users/'+id,{method:'DELETE'}); await this.bootstrap(); },
+  async saveCat(p){ if(DEMO){ if(p.id){ Object.assign(catById(p.id),p); } else S.categories.push({id:uid(),...p}); save(); return; }
+    await api('/api/categories',{method:'POST',body:JSON.stringify(p)}); await this.bootstrap(); },
+  async delCat(id){ if(DEMO){ S.categories=S.categories.filter(x=>x.id!==id); save(); return; }
+    await api('/api/categories/'+id,{method:'DELETE'}); await this.bootstrap(); }
+};
+
 /* ======================= THEME ======================= */
 function applyTheme(t){ document.body.dataset.theme=t; S.theme=t; save();
   $('#themeBtn').innerHTML = t==='dark'
@@ -664,11 +733,16 @@ $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]')
 window.addEventListener('resize',()=>moveIndicator(current));
 
 /* ======================= AUTH ======================= */
-function login(code){
-  const u=S.users.find(x=>x.code===String(code).trim());
-  if(!u){ return false; }
-  ME=u; localStorage.setItem(SKEY,u.id);
-  enterApp(); return true;
+async function login(code){
+  code=String(code).trim();
+  if(DEMO){ const u=S.users.find(x=>x.code===code); if(!u) return false;
+    ME=u; localStorage.setItem(SKEY,u.id); enterApp(); return true; }
+  try{ const r=await api('/api/login',{method:'POST',body:JSON.stringify({code})});
+    if(!r||!r.user) return false;
+    ME=r.user; localStorage.setItem(SKEY,ME.id);
+    if(!S.tasks.length) await DATA.refresh().catch(()=>{});
+    enterApp(); return true;
+  }catch(e){ return false; }
 }
 function logout(){ localStorage.removeItem(SKEY); location.reload(); }
 
@@ -854,15 +928,13 @@ VIEWS.add = (root)=>{
     if(!area){ toast('กรุณากรอกพื้นที่/ชื่อรายการงาน','err'); $('#f-area',root).focus(); return; }
     if(!pendBefore){ toast('กรุณาเพิ่มรูป Before','err'); return; }
     const btn=$('#submitOpen',root); btn.disabled=true; btn.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังบันทึก...';
-    const beforeId=uid(); await IMG.put(beforeId,pendBefore);
-    const t={ id:uid(), code:nextCode(), category:$('#f-cat',root).value,
-      area, detail:$('#f-detail',root).value.trim(),
-      assigneeId:$('#f-assignee',root).value, createdBy:ME.id,
-      dueDate:$('#f-due',root).value, status:'open',
-      before:beforeId, after:null, compare:null,
-      createdAt:new Date().toISOString(), submittedAt:null, closedAt:null, closedBy:null, comments:[] };
-    S.tasks.push(t); logAdd(t.id,'open'); save();
-    toast('เปิดงาน '+t.code+' สำเร็จ','ok'); go('tasks');
+    try{
+      const t=await DATA.createTask({ category:$('#f-cat',root).value, area,
+        detail:$('#f-detail',root).value.trim(), assigneeId:$('#f-assignee',root).value,
+        dueDate:$('#f-due',root).value }, pendBefore);
+      toast('เปิดงาน '+(t&&t.code?t.code:'')+' สำเร็จ','ok'); go('tasks');
+    }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err');
+      btn.disabled=false; btn.innerHTML='เปิดงาน'; }
   };
 };
 
@@ -872,7 +944,7 @@ async function openTask(id){
   const cat=catById(t.category), a=userById(t.assigneeId), opener=userById(t.createdBy);
   const ov=isOverdue(t);
   const beforeU=await IMG.url(t.before), afterU=await IMG.url(t.after), compU=await IMG.url(t.compare);
-  const logs=S.logs.filter(l=>l.taskId===id).sort((x,y)=>x.at.localeCompare(y.at));
+  const logs=(t.logs||S.logs.filter(l=>l.taskId===id)).filter(l=>l.type!=='comment').sort((x,y)=>x.at.localeCompare(y.at));
   const LBL={open:'เปิดงาน',submit:'ส่งงานแก้ไข',close:'ปิดงาน',reopen:'ตีกลับแก้ไข'};
 
   const canSubmit = ME.role==='staff' && t.status!=='closed' && (t.assigneeId===ME.id);
@@ -939,34 +1011,28 @@ async function openTask(id){
       }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } });
     bs.onclick=async()=>{ if(!pend && !t.after){ toast('กรุณาเพิ่มรูป After','err'); return; }
       bs.disabled=true; bs.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังส่ง...';
-      if(pend){ const aid=uid(); await IMG.put(aid,pend); t.after=aid; }
-      t.status='pending'; t.submittedAt=new Date().toISOString();
-      await buildCompare(t); logAdd(t.id,'submit'); save();
-      closeModal(); toast('ส่งงานสำเร็จ รอหัวหน้าตรวจ','ok'); go(current);
+      try{ await DATA.submitAfter(t, pend); closeModal(); toast('ส่งงานสำเร็จ รอหัวหน้าตรวจ','ok'); go(current); }
+      catch(e){ toast('ส่งไม่สำเร็จ: '+e.message,'err'); bs.disabled=false; bs.innerHTML='📤 ส่งงาน (รอตรวจ)'; }
     };
   }
   // review
-  const ap=$('#btnApprove'); if(ap) ap.onclick=async()=>{
-    if(!t.compare) await buildCompare(t);
-    t.status='closed'; t.closedAt=new Date().toISOString(); t.closedBy=ME.id;
-    logAdd(t.id,'close'); save(); closeModal(); toast('ปิดงาน '+t.code+' สำเร็จ 🎉','ok'); go(current);
-  };
-  const rp=$('#btnReopen'); if(rp) rp.onclick=()=>{ t.status='open'; logAdd(t.id,'reopen'); save();
-    closeModal(); toast('ตีกลับให้แก้ไขใหม่','info'); go(current); };
+  const ap=$('#btnApprove'); if(ap) ap.onclick=async()=>{ ap.disabled=true;
+    try{ await DATA.closeTask(t); closeModal(); toast('ปิดงาน '+t.code+' สำเร็จ 🎉','ok'); go(current); }
+    catch(e){ toast('ปิดงานไม่สำเร็จ: '+e.message,'err'); ap.disabled=false; } };
+  const rp=$('#btnReopen'); if(rp) rp.onclick=async()=>{
+    try{ await DATA.reopenTask(t); closeModal(); toast('ตีกลับให้แก้ไขใหม่','info'); go(current); }
+    catch(e){ toast('ไม่สำเร็จ: '+e.message,'err'); } };
   const ln=$('#btnLine'); if(ln) ln.onclick=()=>sendLine(t.id);
   // comment
-  const send=()=>{ const v=$('#cmtInput').value.trim(); if(!v)return;
-    t.comments.push({id:uid(),userId:ME.id,name:ME.name,text:v,at:new Date().toISOString()}); save();
-    openTask(id); };
+  const send=async()=>{ const v=$('#cmtInput').value.trim(); if(!v)return;
+    try{ await DATA.addComment(t,v); openTask(id); }catch(e){ toast('ส่งความคิดเห็นไม่สำเร็จ','err'); } };
   $('#cmtSend').onclick=send;
   $('#cmtInput').addEventListener('keydown',e=>{ if(e.key==='Enter') send(); });
   // delete
-  const del=$('#btnDelete'); if(del) del.onclick=()=>{
+  const del=$('#btnDelete'); if(del) del.onclick=async()=>{
     if(!confirm('ลบงาน '+t.code+' ? การลบนี้ย้อนกลับไม่ได้')) return;
-    IMG.del(t.before);IMG.del(t.after);IMG.del(t.compare);
-    S.tasks=S.tasks.filter(x=>x.id!==id); S.logs=S.logs.filter(l=>l.taskId!==id); save();
-    closeModal(); toast('ลบงานแล้ว','info'); go(current);
-  };
+    try{ await DATA.removeTask(t); closeModal(); toast('ลบงานแล้ว','info'); go(current); }
+    catch(e){ toast('ลบไม่สำเร็จ: '+e.message,'err'); } };
 }
 
 /* ---------- build Before|After comparison image (Canvas) ---------- */
@@ -1308,14 +1374,15 @@ function editUser(id){
     <div class="form-group"><label>LINE userId (ไว้ @mention)</label><input class="input" id="u-line" value="${esc(u.lineUserId||'')}" placeholder="ดักจาก webhook"></div>
     <button class="btn btn-fill" id="saveUser" style="width:100%">บันทึก</button>
     ${id&&id!==ME.id?'<button class="btn btn-danger" id="delUser" style="width:100%;margin-top:10px">ลบผู้ใช้</button>':''}`);
-  $('#saveUser').onclick=()=>{ const name=$('#u-name').value.trim(),code=$('#u-code').value.trim();
+  $('#saveUser').onclick=async()=>{ const name=$('#u-name').value.trim(),code=$('#u-code').value.trim();
     if(!name||!code){ toast('กรอกชื่อและรหัส','err'); return; }
     if(S.users.some(x=>x.code===code && x.id!==id)){ toast('รหัสนี้ถูกใช้แล้ว','err'); return; }
-    if(id){ Object.assign(u,{name,code,role:$('#u-role').value,lineUserId:$('#u-line').value.trim()}); }
-    else S.users.push({id:uid(),code,name,role:$('#u-role').value,lineUserId:$('#u-line').value.trim()});
-    save(); closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); };
-  const d=$('#delUser'); if(d) d.onclick=()=>{ if(!confirm('ลบผู้ใช้นี้?'))return;
-    S.users=S.users.filter(x=>x.id!==id); save(); closeModal(); toast('ลบแล้ว','info'); go('settings'); };
+    try{ await DATA.saveUser({ id:id||undefined, code, name, role:$('#u-role').value, lineUserId:$('#u-line').value.trim() });
+      closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); }
+    catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
+  const d=$('#delUser'); if(d) d.onclick=async()=>{ if(!confirm('ลบผู้ใช้นี้?'))return;
+    try{ await DATA.delUser(id); closeModal(); toast('ลบแล้ว','info'); go('settings'); }
+    catch(e){ toast('ลบไม่สำเร็จ','err'); } };
 }
 function editCat(id){
   const c=id?catById(id):{id:null,name:'',color:'#2563eb'};
@@ -1324,17 +1391,23 @@ function editCat(id){
     <div class="form-group"><label>สี</label><input type="color" id="c-color" value="${c.color}" style="width:60px;height:46px;border:none;border-radius:12px;background:none;cursor:pointer"></div>
     <button class="btn btn-fill" id="saveCat" style="width:100%">บันทึก</button>
     ${id?'<button class="btn btn-danger" id="delCat" style="width:100%;margin-top:10px">ลบหมวด</button>':''}`);
-  $('#saveCat').onclick=()=>{ const name=$('#c-name').value.trim(); if(!name){ toast('กรอกชื่อหมวด','err'); return; }
-    if(id){ c.name=name; c.color=$('#c-color').value; } else S.categories.push({id:uid(),name,color:$('#c-color').value});
-    save(); closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); };
-  const d=$('#delCat'); if(d) d.onclick=()=>{ if(S.tasks.some(t=>t.category===id)){ toast('มีงานใช้หมวดนี้อยู่ ลบไม่ได้','err'); return; }
-    if(!confirm('ลบหมวดนี้?'))return; S.categories=S.categories.filter(x=>x.id!==id); save(); closeModal(); toast('ลบแล้ว','info'); go('settings'); };
+  $('#saveCat').onclick=async()=>{ const name=$('#c-name').value.trim(); if(!name){ toast('กรอกชื่อหมวด','err'); return; }
+    try{ await DATA.saveCat({ id:id||undefined, name, color:$('#c-color').value });
+      closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); }
+    catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
+  const d=$('#delCat'); if(d) d.onclick=async()=>{ if(S.tasks.some(t=>t.category===id)){ toast('มีงานใช้หมวดนี้อยู่ ลบไม่ได้','err'); return; }
+    if(!confirm('ลบหมวดนี้?'))return;
+    try{ await DATA.delCat(id); closeModal(); toast('ลบแล้ว','info'); go('settings'); }
+    catch(e){ toast('ลบไม่สำเร็จ','err'); } };
 }
 
 /* ======================= LOGIN UI WIRE ======================= */
-$('#loginForm').addEventListener('submit',e=>{ e.preventDefault();
-  const code=$('#loginCode').value; if(!login(code)){ $('#loginErr').textContent='ไม่พบรหัสนี้ในระบบ (whitelist)';
-    $('#loginCode').focus(); } });
+$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault();
+  const code=$('#loginCode').value; const btn=$('#loginForm button[type=submit]');
+  if(btn) btn.style.opacity=.6;
+  const ok=await login(code);
+  if(btn) btn.style.opacity=1;
+  if(!ok){ $('#loginErr').textContent='ไม่พบรหัสนี้ในระบบ (whitelist)'; $('#loginCode').focus(); } });
 $$('.demo-chip').forEach(b=>b.onclick=()=>{ $('#loginCode').value=b.dataset.code; $('#loginErr').textContent=''; });
 $('#themeBtn').onclick=()=>applyTheme(S.theme==='dark'?'light':'dark');
 $('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">${ME.role==='supervisor'?'หัวหน้างาน':'พนักงาน'} · รหัส ${esc(ME.code)}</div>
@@ -1342,7 +1415,9 @@ $('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">${
 
 /* ======================= BOOT ======================= */
 applyTheme(S.theme||'light');
-(function boot(){
+(async function boot(){
+  if(!DEMO){ try{ await DATA.bootstrap(); }
+    catch(e){ console.warn('bootstrap failed',e); toast('เชื่อมต่อ server ไม่ได้','err'); } }
   const sid=localStorage.getItem(SKEY);
   if(sid){ const u=userById(sid); if(u){ ME=u; enterApp(); return; } }
   // focus login input after intro

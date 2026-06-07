@@ -17,8 +17,10 @@
 - 🌗 Light/Dark mode, 🧭 Magic floating nav, ⚡ SPA ลื่นไม่รีโหลด
 - 🗜️ บีบอัดรูปก่อนอัปโหลด, 💬 คอมเมนต์ในแต่ละงาน, 🇹🇭 ภาษาไทยเต็มระบบ
 
-> หมายเหตุ: ปุ่มส่ง LINE ทำงานจริงเมื่อ **deploy Worker + ตั้งค่า LINE** แล้วใส่ `CONFIG.API_BASE`
-> (ในโหมด Demo จะขึ้นคำแนะนำให้ deploy ก่อน) — ดู [DEPLOY.md](DEPLOY.md)
+- 🌐 **Online mode**: ใส่ `CONFIG.API_BASE` = สลับจาก Demo → เก็บข้อมูลบน **D1 + R2** ทุกคนเห็นชุดเดียวกัน real-time
+
+> โหมดการทำงานสลับอัตโนมัติด้วยบรรทัดเดียว: `CONFIG.API_BASE` ว่าง = **Demo** (เก็บในเครื่อง),
+> ใส่ URL ของ Worker = **Online** (D1+R2, ส่ง LINE จริง) — ดู [DEPLOY.md](DEPLOY.md)
 
 ## 🚀 ใช้งานแบบ Demo (ไม่ต้องตั้ง server)
 เปิด `index.html` ผ่านเว็บเซิร์ฟเวอร์ (PWA ต้องการ http/https ไม่ใช่ `file://`):

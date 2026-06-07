@@ -45,13 +45,19 @@ wrangler deploy
 ```
 ได้ URL เช่น `https://ba-track.<subdomain>.workers.dev`
 
-### 5. ต่อ Frontend
-แก้บนสุดของ `<script>` ใน `index.html`:
+### 5. ต่อ Frontend (สลับเป็น Online เต็มรูปแบบ)
+แก้บรรทัดเดียวบนสุดของ `<script>` ใน `index.html`:
 ```js
-const CONFIG = { API_BASE: "https://ba-track.<subdomain>.workers.dev", ... };
+const CONFIG = { API_BASE: "https://ba-track.<subdomain>.workers.dev", APP_NAME: "..." };
 ```
-> หมายเหตุ: โค้ด frontend รอบ MVP นี้ทำงานเต็มรูปแบบใน **Demo mode**
-> ส่วนการสลับไปเรียก API จริงทำได้ผ่าน `CONFIG.API_BASE` (เลเยอร์ fetch จะเติมในรอบถัดไป)
+เมื่อ `API_BASE` ไม่ว่าง แอปจะสลับจาก Demo → **Online อัตโนมัติ**:
+- โหลดผู้ใช้/หมวด/งานทั้งหมดจาก D1 (`/api/bootstrap`) — ทุกคนเห็นข้อมูลชุดเดียวกัน
+- เปิด/ส่ง/ปิดงาน, คอมเมนต์, จัดการผู้ใช้/หมวด → เขียนผ่าน Worker (D1)
+- รูป Before/After/รูปเปรียบเทียบ → อัปขึ้น **R2** และทุกคนโหลดดูได้
+- ปิดงาน → ระบบ push เข้า LINE อัตโนมัติ (ถ้าตั้งค่า notify ไว้)
+
+> ตั้ง `ALLOW_ORIGIN` ใน `wrangler.toml` ให้ตรงกับโดเมนหน้าเว็บ (เช่น GitHub Pages) เพื่อความปลอดภัยของ CORS
+> (ค่าเริ่มต้น `*` ใช้ตอนทดสอบเท่านั้น)
 
 ---
 

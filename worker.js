@@ -95,6 +95,8 @@ function rowTask(t, logs) {
     createdAt: t.created_at, submittedAt: t.submitted_at, closedAt: t.closed_at, closedBy: t.closed_by,
     comments: logs.filter(l => l.type === 'comment' && l.task_id === t.id)
       .map(l => ({ id: l.id, userId: l.user_id, name: l.user_name, text: l.text, at: l.at })),
+    logs: logs.filter(l => l.task_id === t.id && l.type !== 'comment')
+      .map(l => ({ type: l.type, name: l.user_name, at: l.at })),
   };
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
