@@ -1,5 +1,5 @@
 /* Before/After Work Tracking — Service Worker (offline shell cache) */
-const CACHE = 'ba-track-v3';
+const CACHE = 'ba-track-v4';
 const ASSETS = [
   './',
   './index.html',

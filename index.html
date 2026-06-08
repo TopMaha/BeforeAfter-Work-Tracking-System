@@ -290,35 +290,34 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sw-mini:active{transform:scale(.9)}
 .dot-color{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 
-/* ============================ MAGIC NAV ============================ */
+/* ============================ BOTTOM NAV (icon-only, ชัดเจน) ============================ */
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:40;
-  width:min(420px,calc(100% - 24px));height:64px;
+  width:min(430px,calc(100% - 20px));height:66px;
   background:var(--surface);border:1px solid var(--border);
-  border-radius:30px;box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:space-around;
-  padding:0 8px;
+  border-radius:24px;box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:space-around;
+  padding:0 6px;
 }
-.nav-indicator{position:absolute;top:8px;width:48px;height:48px;border-radius:50%;
+/* แถบไฮไลต์สีฟ้าเลื่อนตามเมนูที่เลือก */
+.nav-indicator{position:absolute;top:50%;width:54px;height:50px;border-radius:16px;transform:translateY(-50%);
   background:linear-gradient(135deg,var(--blue-500),var(--blue-700));
-  box-shadow:0 10px 22px rgba(37,99,235,.5);transition:left .45s var(--ease);z-index:0}
-.nav-btn{position:relative;z-index:1;flex:1;height:100%;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;color:var(--text-3);transition:color .3s var(--ease)}
-.nav-btn svg{width:23px;height:23px;transition:transform .45s var(--ease)}
-.nav-btn .lbl{font-size:10px;font-weight:700;transition:opacity .3s,transform .3s}
-.nav-btn.active{color:#fff}
-.nav-btn.active svg{transform:translateY(-26px) scale(1.06)}
-.nav-btn.active .lbl{transform:translateY(-22px);color:var(--text);opacity:1}
-.nav-btn:not(.active) .lbl{opacity:.0;transform:translateY(4px)}
-.nav-btn:active svg{transform:scale(.85)}
-.nav-btn.active:active svg{transform:translateY(-26px) scale(.95)}
-/* center add */
-.nav-add{flex:0 0 auto}
-.nav-add .plus{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:#fff;
+  box-shadow:0 8px 18px rgba(37,99,235,.45);transition:left .4s var(--ease),opacity .25s;z-index:0}
+.nav-btn{position:relative;z-index:1;flex:1;height:100%;display:flex;align-items:center;justify-content:center;
+  color:var(--text-2);transition:color .3s var(--ease)}
+.nav-btn svg{width:26px;height:26px;stroke-width:2.1;transition:transform .3s var(--ease)}
+.nav-btn.active{color:#fff}                 /* ไอคอนที่เลือก = ขาว บนแถบฟ้า */
+.nav-btn.active svg{transform:scale(1.12)}
+.nav-btn:active svg{transform:scale(.84)}
+.nav-btn.active:active svg{transform:scale(1.02)}
+/* center add — ปุ่มบวกเด่นพิเศษ ลอยขึ้นเล็กน้อย */
+.nav-add{flex:0 0 auto;position:relative;z-index:2}
+.nav-add .plus{width:56px;height:56px;border-radius:20px;display:grid;place-items:center;color:#fff;
   background:linear-gradient(135deg,var(--blue-400),var(--blue-700));
-  box-shadow:0 12px 26px rgba(37,99,235,.5);transform:translateY(-14px);transition:transform .2s var(--ease)}
-.nav-add .plus svg{width:28px;height:28px}
-.nav-add:active .plus{transform:translateY(-14px) scale(.9)}
+  box-shadow:0 12px 24px rgba(37,99,235,.55);transform:translateY(-12px);transition:transform .2s var(--ease)}
+.nav-add .plus svg{width:30px;height:30px;stroke-width:2.6}
+.nav-add.active .plus{box-shadow:0 0 0 4px var(--primary-soft),0 12px 24px rgba(37,99,235,.6)}
+.nav-add:active .plus{transform:translateY(-12px) scale(.9)}
 
 /* ============================ MODAL ============================ */
 .modal-back{position:fixed;inset:0;z-index:70;background:rgba(8,15,30,.55);backdrop-filter:blur(4px);
@@ -453,6 +452,9 @@ body.desktop-report .view{max-width:1180px}
 <main id="app">
   <header class="appbar">
     <div class="title"><span class="dot"></span><span id="barTitle">หน้าหลัก</span></div>
+    <button class="icon-btn" id="refreshBtn" title="โหลดข้อมูลล่าสุด">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></svg>
+    </button>
     <button class="icon-btn" id="themeBtn" title="สลับธีม"></button>
     <button class="avatar" id="meBtn" title="บัญชี"></button>
   </header>
@@ -462,24 +464,20 @@ body.desktop-report .view{max-width:1180px}
 <!-- bottom nav -->
 <nav class="nav" id="nav" style="display:none">
   <span class="nav-indicator" id="navInd"></span>
-  <button class="nav-btn" data-route="dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
-    <span class="lbl">หน้าหลัก</span>
+  <button class="nav-btn" data-route="dashboard" title="หน้าหลัก" aria-label="หน้าหลัก">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
   </button>
-  <button class="nav-btn" data-route="tasks">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h6"/></svg>
-    <span class="lbl">งาน</span>
+  <button class="nav-btn" data-route="tasks" title="งานทั้งหมด" aria-label="งานทั้งหมด">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5h.01M4 12h.01M4 19h.01"/></svg>
   </button>
-  <button class="nav-add" data-route="add" title="เปิดงานใหม่">
-    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+  <button class="nav-add" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
+    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
   </button>
-  <button class="nav-btn" data-route="report">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg>
-    <span class="lbl">รายงาน</span>
+  <button class="nav-btn" data-route="report" title="รายงาน" aria-label="รายงาน">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
   </button>
-  <button class="nav-btn" data-route="settings">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
-    <span class="lbl">ตั้งค่า</span>
+  <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
   </button>
 </nav>
 
@@ -508,8 +506,10 @@ const el = (h) => { const t=document.createElement('template'); t.innerHTML=h.tr
 const esc = (s) => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const todayISO = () => new Date().toISOString().slice(0,10);
-const STATUS = { open:'รอแก้ไข', pending:'รอตรวจ', closed:'ปิดงาน' };
-const STATUS_BADGE = { open:'b-open', pending:'b-pending', closed:'b-closed' };
+const STATUS = { open:'รอแก้ไข', closed:'เสร็จแล้ว' };
+const STATUS_BADGE = { open:'b-open', closed:'b-closed' };
+const stName = (s)=> STATUS[s] || (s==='pending'?'กำลังทำ':s);
+const stBadge = (s)=> STATUS_BADGE[s] || 'b-pending';
 
 function fmtDate(iso){ if(!iso) return '-'; const d=new Date(iso);
   return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}); }
@@ -598,16 +598,15 @@ function seed(){
     createdAt:new Date(now-2*86400000).toISOString(),submittedAt:null,closedAt:null,closedBy:null,comments:[]};
   const t2={id:uid(),code:'BA-0002',category:'c1',area:'ชั้นวางอะไหล่ คลังB',
     detail:'อะไหล่วางไม่เป็นระเบียบ ไม่มีป้ายชี้บ่ง',
-    assigneeId:'u3',createdBy:'u1',dueDate:isoIn(-1),status:'pending',
+    assigneeId:'u3',createdBy:'u1',dueDate:isoIn(-1),status:'open',
     before:null,after:null,compare:null,
-    createdAt:new Date(now-5*86400000).toISOString(),submittedAt:new Date(now-1*86400000).toISOString(),closedAt:null,closedBy:null,
-    comments:[{id:uid(),userId:'u3',name:'อนุชา ช่างซ่อม',text:'จัดเรียงและติดป้ายเรียบร้อยครับ',at:new Date(now-1*86400000).toISOString()}]};
+    createdAt:new Date(now-5*86400000).toISOString(),submittedAt:null,closedAt:null,closedBy:null,
+    comments:[{id:uid(),userId:'u3',name:'อนุชา ช่างซ่อม',text:'กำลังดำเนินการครับ',at:new Date(now-1*86400000).toISOString()}]};
   return {
     users,categories:cats,tasks:[t1,t2],
     logs:[
       {id:uid(),taskId:t1.id,type:'open',userId:'u1',name:'สมชาย หัวหน้างาน',at:t1.createdAt},
-      {id:uid(),taskId:t2.id,type:'open',userId:'u1',name:'สมชาย หัวหน้างาน',at:t2.createdAt},
-      {id:uid(),taskId:t2.id,type:'submit',userId:'u3',name:'อนุชา ช่างซ่อม',at:t2.submittedAt}
+      {id:uid(),taskId:t2.id,type:'open',userId:'u1',name:'สมชาย หัวหน้างาน',at:t2.createdAt}
     ],
     line:{token:'',groupId:'',groups:[],notify:true},
     counter:2, theme:'light'
@@ -640,11 +639,20 @@ const DATA = {
     const r=await api('/api/tasks',{method:'POST',body:JSON.stringify({...p, before:key, createdBy:ME.id, createdByName:ME.name})});
     await this.refresh(); return S.tasks.find(x=>x.id===r.id)||r; },
 
+  // ส่งรูป After = ถือว่าแก้ไขเสร็จทันที (ไม่มีขั้นรออนุมัติ)
   async submitAfter(t, afterBlob){
     if(afterBlob){ const key=DEMO?uid():('after-'+uid()); await IMG.put(key,afterBlob); t.after=key; }
-    t.status='pending'; t.submittedAt=new Date().toISOString(); await buildCompare(t);
-    if(DEMO){ logAdd(t.id,'submit'); save(); return; }
-    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({after:t.after,compare:t.compare,status:'pending',submittedAt:t.submittedAt,_log:'submit',_userId:ME.id,_userName:ME.name})});
+    const now=new Date().toISOString();
+    t.status='closed'; t.submittedAt=now; t.closedAt=now; t.closedBy=ME.id; await buildCompare(t);
+    if(DEMO){ logAdd(t.id,'done'); save(); return; }
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({after:t.after,compare:t.compare,status:'closed',submittedAt:now,closedAt:now,closedBy:ME.id,_log:'done',_userId:ME.id,_userName:ME.name})});
+    await this.refresh(); },
+
+  // แก้ไขรายละเอียดงาน (ใครก็ได้)
+  async editTask(t, f){
+    Object.assign(t, f);
+    if(DEMO){ save(); return; }
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({area:t.area,detail:t.detail,category:t.category,assigneeId:t.assigneeId,dueDate:t.dueDate,_log:'edit',_userId:ME.id,_userName:ME.name})});
     await this.refresh(); },
 
   async closeTask(t){ if(!t.compare) await buildCompare(t);
@@ -709,8 +717,6 @@ let current='dashboard';
 
 function go(route){
   if(!ROUTES.includes(route)) route='dashboard';
-  if(route==='add' && ME.role!=='supervisor'){ toast('เปิดงานใหม่ได้เฉพาะหัวหน้างาน','err'); return; }
-  if(route==='settings' && ME.role!=='supervisor'){ toast('ตั้งค่าได้เฉพาะหัวหน้างาน','err'); return; }
   current=route; $('#barTitle').textContent=TITLES[route];
   moveIndicator(route); markNav(route);
   const host=$('#views');
@@ -720,14 +726,14 @@ function go(route){
   render(wrap);
 }
 function markNav(route){
-  $$('.nav [data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route && b.classList.contains('nav-btn')));
+  $$('.nav [data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
 }
 function moveIndicator(route){
   const btn=$(`.nav .nav-btn[data-route="${route}"]`); const ind=$('#navInd');
-  if(!btn){ ind.style.opacity=0; return; }
+  if(!btn){ ind.style.opacity=0; return; }   // อยู่หน้า "เพิ่มงาน" → ซ่อนแถบ (ใช้ปุ่มบวกแทน)
   ind.style.opacity=1;
   const nav=$('#nav').getBoundingClientRect(); const b=btn.getBoundingClientRect();
-  ind.style.left=(b.left-nav.left + b.width/2 - 24)+'px';
+  ind.style.left=(b.left-nav.left + b.width/2 - 27)+'px';
 }
 $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
 window.addEventListener('resize',()=>moveIndicator(current));
@@ -751,9 +757,6 @@ function enterApp(){
   $('#app').classList.add('show');
   $('#nav').style.display='flex';
   $('#meBtn').textContent = ME.name.trim().charAt(0);
-  // hide nav items by role
-  $('.nav [data-route="add"]').style.visibility = ME.role==='supervisor'?'visible':'hidden';
-  $('.nav [data-route="settings"]').style.display = ME.role==='supervisor'?'':'flex';
   go('dashboard');
   requestAnimationFrame(()=>moveIndicator('dashboard'));
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>moveIndicator(current));
@@ -781,7 +784,6 @@ const VIEWS = {};
 VIEWS.dashboard = (root)=>{
   const t=S.tasks;
   const open=t.filter(x=>x.status==='open').length;
-  const pending=t.filter(x=>x.status==='pending').length;
   const closed=t.filter(x=>x.status==='closed').length;
   const overdue=t.filter(isOverdue).length;
   const mine=t.filter(x=>x.assigneeId===ME.id && x.status!=='closed')
@@ -793,9 +795,9 @@ VIEWS.dashboard = (root)=>{
     </div>
     <div class="stat-grid" style="margin-top:14px">
       ${statCard('s-open',open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/>')}
-      ${statCard('s-pending',pending,'รอตรวจ','<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}
-      ${statCard('s-closed',closed,'ปิดงานแล้ว','<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/>')}
+      ${statCard('s-closed',closed,'เสร็จแล้ว','<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/>')}
       ${statCard('s-overdue',overdue,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>')}
+      ${statCard('s-pending',t.length,'ทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>')}
     </div>
     ${overdue?`<div class="card tap" id="goOverdue" style="margin-top:14px;padding:14px;display:flex;align-items:center;gap:12px;border-color:var(--red)">
       <div style="width:40px;height:40px;border-radius:12px;background:var(--red-bg);color:var(--red);display:grid;place-items:center;flex-shrink:0">
@@ -829,7 +831,7 @@ function taskCard(t){
     </div>
     <div class="task-body">
       <div class="task-top"><span class="task-code">${t.code}</span>
-        <span class="badge ${STATUS_BADGE[t.status]}">${STATUS[t.status]}</span></div>
+        <span class="badge ${stBadge(t.status)}">${stName(t.status)}</span></div>
       <p class="task-title">${esc(t.area)}</p>
       <div class="task-meta">
         <span class="chip chip-cat">${cat?esc(cat.name):'-'}</span>
@@ -851,7 +853,7 @@ VIEWS.tasks = (root)=>{
       <input id="q" placeholder="ค้นหา รหัส/พื้นที่/รายละเอียด" value="${esc(TASK_FILTER.q)}">
     </div>
     <div class="filters" id="sfilters">
-      ${['all','open','pending','closed','overdue'].map(s=>`<button class="fchip ${TASK_FILTER.status===s?'active':''}" data-s="${s}">${({all:'ทั้งหมด',open:'รอแก้ไข',pending:'รอตรวจ',closed:'ปิดงาน',overdue:'เกินกำหนด'})[s]}</button>`).join('')}
+      ${['all','open','closed','overdue'].map(s=>`<button class="fchip ${TASK_FILTER.status===s?'active':''}" data-s="${s}">${({all:'ทั้งหมด',open:'รอแก้ไข',closed:'เสร็จแล้ว',overdue:'เกินกำหนด'})[s]}</button>`).join('')}
     </div>
     <div id="list"></div>`;
   const list=$('#list',root);
@@ -877,7 +879,7 @@ VIEWS.tasks = (root)=>{
 let pendBefore=null; // {blob}
 VIEWS.add = (root)=>{
   pendBefore=null;
-  const staff=S.users.filter(u=>u.role==='staff');
+  const staff=S.users;
   root.innerHTML=`
     <div class="card" style="padding:16px">
       <div class="form-group">
@@ -895,7 +897,7 @@ VIEWS.add = (root)=>{
       <div class="btn-row" style="margin-bottom:16px">
         <div class="form-group" style="flex:1;margin:0">
           <label>ผู้รับผิดชอบ</label>
-          <select class="input" id="f-assignee">${staff.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')||'<option value="">— ไม่มีพนักงาน —</option>'}</select>
+          <select class="input" id="f-assignee"><option value="">— ไม่ระบุ —</option>${staff.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select>
         </div>
         <div class="form-group" style="flex:1;margin:0">
           <label>วันครบกำหนด</label>
@@ -945,15 +947,13 @@ async function openTask(id){
   const ov=isOverdue(t);
   const beforeU=await IMG.url(t.before), afterU=await IMG.url(t.after), compU=await IMG.url(t.compare);
   const logs=(t.logs||S.logs.filter(l=>l.taskId===id)).filter(l=>l.type!=='comment').sort((x,y)=>x.at.localeCompare(y.at));
-  const LBL={open:'เปิดงาน',submit:'ส่งงานแก้ไข',close:'ปิดงาน',reopen:'ตีกลับแก้ไข'};
-
-  const canSubmit = ME.role==='staff' && t.status!=='closed' && (t.assigneeId===ME.id);
-  const canReview = ME.role==='supervisor' && t.status==='pending';
-  const canClose = ME.role==='supervisor';
+  const LBL={open:'เปิดงาน',done:'แก้ไขเสร็จ',edit:'แก้ไขข้อมูล',reopen:'เปิดงานใหม่',submit:'ส่งงานแก้ไข',close:'ปิดงาน'};
+  const canSubmit = t.status!=='closed';   // เปิดอยู่ = ใครก็ส่งรูป After ได้
+  const isClosed = t.status==='closed';
 
   openModal(`
     <h3>${esc(t.area)}</h3>
-    <div class="sub">${t.code} · <span class="badge ${STATUS_BADGE[t.status]}" style="vertical-align:middle">${STATUS[t.status]}</span></div>
+    <div class="sub">${t.code} · <span class="badge ${stBadge(t.status)}" style="vertical-align:middle">${stName(t.status)}</span></div>
     <div class="compare">
       <figure class="cb">${beforeU?`<img src="${beforeU}">`:`<div class="ph">ยังไม่มีรูป<br>Before</div>`}<figcaption>BEFORE</figcaption></figure>
       <figure class="ca">${afterU?`<img src="${afterU}">`:`<div class="ph">ยังไม่มีรูป<br>After</div>`}<figcaption>AFTER</figcaption></figure>
@@ -970,19 +970,18 @@ async function openTask(id){
 
     ${canSubmit?`<div class="form-group">
       <label>${t.after?'อัปเดต':'เพิ่ม'}รูป After (หลังแก้ไข)</label>
-      <div class="photo-pick" id="pickAfter"><div class="ph"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่าย/เลือกรูป After</b></div>
+      <div class="photo-pick ${afterU?'has':''}" id="pickAfter">${afterU?`<img src="${afterU}">`:`<div class="ph"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่าย/เลือกรูป After</b></div>`}
         <input type="file" accept="image/*" capture="environment" id="fileAfter"></div>
-      <button class="btn btn-fill" id="btnSubmit" style="margin-top:12px" ${t.after?'':'disabled'}>📤 ส่งงาน (รอตรวจ)</button>
+      <button class="btn btn-green" id="btnSubmit" style="margin-top:12px" ${t.after?'':'disabled'}>✓ บันทึกว่าแก้ไขเสร็จ</button>
     </div>`:''}
 
-    ${canReview?`<div class="btn-row" style="margin-bottom:8px">
-      <button class="btn btn-danger" id="btnReopen">↩︎ ตีกลับ</button>
-      <button class="btn btn-green" id="btnApprove" style="flex:2">✓ อนุมัติ & ปิดงาน</button></div>`:''}
-    ${(!canReview && canClose && t.status==='open')?`<div style="font-size:12.5px;color:var(--text-3);text-align:center;margin-bottom:8px">รอพนักงานส่งรูป After</div>`:''}
+    ${isClosed?`<button class="btn btn-ghost" id="btnReopen" style="width:100%;margin-bottom:8px">↩︎ เปิดงานนี้ใหม่ (แก้ไขเพิ่ม)</button>`:''}
 
-    ${(ME.role==='supervisor' && t.after)?`<button class="btn btn-ghost" id="btnLine" style="width:100%;margin-bottom:6px">
+    ${t.after?`<button class="btn btn-ghost" id="btnLine" style="width:100%;margin-bottom:6px">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
       ส่งรายงานเข้า LINE</button>`:''}
+
+    <button class="btn btn-soft" id="btnEdit" style="width:100%;margin-bottom:6px">✎ แก้ไขรายละเอียดงาน</button>
 
     <div class="section-title">ไทม์ไลน์ (Audit Trail)</div>
     <div class="timeline">
@@ -995,7 +994,7 @@ async function openTask(id){
     </div>
     <div class="cmt-form"><input class="input" id="cmtInput" placeholder="เพิ่มความคิดเห็น..."><button class="btn btn-soft" id="cmtSend" style="padding:0 16px">ส่ง</button></div>
 
-    ${ME.role==='supervisor'?`<button class="btn btn-danger" id="btnDelete" style="width:100%;margin-top:16px">🗑️ ลบงานนี้</button>`:''}
+    <button class="btn btn-danger" id="btnDelete" style="width:100%;margin-top:16px">🗑️ ลบงานนี้</button>
   `);
 
   // download compare
@@ -1011,17 +1010,14 @@ async function openTask(id){
       }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } });
     bs.onclick=async()=>{ if(!pend && !t.after){ toast('กรุณาเพิ่มรูป After','err'); return; }
       bs.disabled=true; bs.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังส่ง...';
-      try{ await DATA.submitAfter(t, pend); closeModal(); toast('ส่งงานสำเร็จ รอหัวหน้าตรวจ','ok'); go(current); }
-      catch(e){ toast('ส่งไม่สำเร็จ: '+e.message,'err'); bs.disabled=false; bs.innerHTML='📤 ส่งงาน (รอตรวจ)'; }
+      try{ await DATA.submitAfter(t, pend); closeModal(); toast('บันทึกว่าแก้ไขเสร็จแล้ว 🎉','ok'); go(current); }
+      catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); bs.disabled=false; bs.innerHTML='✓ บันทึกว่าแก้ไขเสร็จ'; }
     };
   }
-  // review
-  const ap=$('#btnApprove'); if(ap) ap.onclick=async()=>{ ap.disabled=true;
-    try{ await DATA.closeTask(t); closeModal(); toast('ปิดงาน '+t.code+' สำเร็จ 🎉','ok'); go(current); }
-    catch(e){ toast('ปิดงานไม่สำเร็จ: '+e.message,'err'); ap.disabled=false; } };
   const rp=$('#btnReopen'); if(rp) rp.onclick=async()=>{
-    try{ await DATA.reopenTask(t); closeModal(); toast('ตีกลับให้แก้ไขใหม่','info'); go(current); }
+    try{ await DATA.reopenTask(t); closeModal(); toast('เปิดงานใหม่แล้ว','info'); go(current); }
     catch(e){ toast('ไม่สำเร็จ: '+e.message,'err'); } };
+  const ed=$('#btnEdit'); if(ed) ed.onclick=()=>editTaskForm(id);
   const ln=$('#btnLine'); if(ln) ln.onclick=()=>sendLine(t.id);
   // comment
   const send=async()=>{ const v=$('#cmtInput').value.trim(); if(!v)return;
@@ -1090,7 +1086,7 @@ VIEWS.report = (root)=>{
         <div class="form-group" style="flex:1;margin:0"><label>หมวด</label>
           <select class="input" id="r-cat"><option value="all">ทั้งหมด</option>${S.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
         <div class="form-group" style="flex:1;margin:0"><label>สถานะ</label>
-          <select class="input" id="r-status"><option value="all">ทั้งหมด</option><option value="open">รอแก้ไข</option><option value="pending">รอตรวจ</option><option value="closed">ปิดงาน</option><option value="overdue">เกินกำหนด</option></select></div>
+          <select class="input" id="r-status"><option value="all">ทั้งหมด</option><option value="open">รอแก้ไข</option><option value="closed">เสร็จแล้ว</option><option value="overdue">เกินกำหนด</option></select></div>
       </div>
       <div class="btn-row" style="margin-bottom:12px">
         <div class="form-group" style="flex:1;margin:0"><label>ผู้รับผิดชอบ</label>
@@ -1132,16 +1128,16 @@ VIEWS.report = (root)=>{
     const arr=filtered();
     $('#repCount',root).textContent=arr.length;
     // dashboard summary
-    const open=arr.filter(x=>x.status==='open').length, pend=arr.filter(x=>x.status==='pending').length,
+    const open=arr.filter(x=>x.status==='open').length,
       closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
     const byCat=S.categories.map(c=>({c,n:arr.filter(t=>t.category===c.id).length}));
     const maxc=Math.max(1,...byCat.map(x=>x.n));
     $('#rep-dash',root).innerHTML=`
       <div class="stat-grid">
         ${statCard('s-open',open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/>')}
-        ${statCard('s-pending',pend,'รอตรวจ','<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}
-        ${statCard('s-closed',closed,'ปิดงาน','<path d="M22 4L12 14.01l-3-3"/>')}
+        ${statCard('s-closed',closed,'เสร็จแล้ว','<path d="M22 4L12 14.01l-3-3"/>')}
         ${statCard('s-overdue',over,'เกินกำหนด','<path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/>')}
+        ${statCard('s-pending',arr.length,'ทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>')}
       </div>
       <div class="card" style="padding:16px;margin-top:14px">
         <div style="font-weight:800;font-size:14px;margin-bottom:14px">สรุปตามหมวดหมู่</div>
@@ -1176,7 +1172,7 @@ function desktopTable(arr){
       </td>
       <td class="wrap">${esc(t.area)}</td>
       <td>${cat?esc(cat.name):'-'}</td>
-      <td><span class="badge ${STATUS_BADGE[t.status]}">${STATUS[t.status]}</span></td>
+      <td><span class="badge ${stBadge(t.status)}">${stName(t.status)}</span></td>
       <td>${a?esc(a.name):'-'}</td>
       <td style="${isOverdue(t)?'color:var(--red);font-weight:700':''}">${fmtDate(t.dueDate)}</td>
       <td>${o?esc(o.name.split(' ')[0]):'-'}<br><span style="color:var(--text-3);font-size:11px">${fmtDate(t.createdAt)}</span></td>
@@ -1189,7 +1185,7 @@ function desktopTable(arr){
 function exportCsv(arr){
   const head=['Code','Area','Detail','Category','Status','Assignee','DueDate','OpenedBy','OpenedAt','ClosedBy','ClosedAt'];
   const rows=arr.map(t=>{ const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
-    return [t.code,t.area,t.detail,cat?cat.name:'',STATUS[t.status],a?a.name:'',t.dueDate||'',o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']
+    return [t.code,t.area,t.detail,cat?cat.name:'',stName(t.status),a?a.name:'',t.dueDate||'',o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']
       .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','); });
   const csv='﻿'+head.join(',')+'\n'+rows.join('\n');
   downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'ba-report-'+todayISO()+'.csv');
@@ -1211,7 +1207,7 @@ async function api(path,opts={}){
 /* ---------- รายงานรวม (สรุปงานของ array) ---------- */
 function reportRows(arr){
   return arr.map(t=>{ const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
-    return [t.code,t.area,t.detail||'',cat?cat.name:'',STATUS[t.status],a?a.name:'',t.dueDate||'',
+    return [t.code,t.area,t.detail||'',cat?cat.name:'',stName(t.status),a?a.name:'',t.dueDate||'',
       o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']; });
 }
 const REPORT_HEAD=['รหัส','พื้นที่','รายละเอียด','หมวด','สถานะ','ผู้รับผิดชอบ','ครบกำหนด','เปิดโดย','เปิดเมื่อ','ปิดโดย','ปิดเมื่อ'];
@@ -1257,7 +1253,7 @@ function exportXlsx(arr){
 /* ---------- PDF / พิมพ์ (เรนเดอร์ไทยได้สมบูรณ์ผ่าน print ของเบราว์เซอร์) ---------- */
 async function printReport(arr){
   const area=$('#printArea');
-  const open=arr.filter(x=>x.status==='open').length, pend=arr.filter(x=>x.status==='pending').length,
+  const open=arr.filter(x=>x.status==='open').length,
     closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
   const rowsHtml=await Promise.all(arr.map(async(t,i)=>{
     const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
@@ -1265,7 +1261,7 @@ async function printReport(arr){
     return `<tr>
       <td>${i+1}</td><td><b>${t.code}</b></td>
       <td>${b?`<img src="${b}">`:'—'} ${af?`<img src="${af}">`:'—'}</td>
-      <td>${esc(t.area)}</td><td>${cat?esc(cat.name):'-'}</td><td>${STATUS[t.status]}${isOverdue(t)?' (เกิน)':''}</td>
+      <td>${esc(t.area)}</td><td>${cat?esc(cat.name):'-'}</td><td>${stName(t.status)}${isOverdue(t)?' (เกิน)':''}</td>
       <td>${a?esc(a.name):'-'}</td><td>${fmtDate(t.dueDate)}</td>
       <td>${o?esc(o.name.split(' ')[0]):'-'}<br><small>${fmtDate(t.createdAt)}</small></td>
       <td>${cl?esc(cl.name.split(' ')[0]):'-'}<br><small>${t.closedAt?fmtDate(t.closedAt):'-'}</small></td>
@@ -1275,8 +1271,8 @@ async function printReport(arr){
       <div><h1>รายงานงานแก้ไข Before/After</h1>
         <div class="pr-sub">พิมพ์เมื่อ ${fmtDateTime(new Date().toISOString())} · รวม ${arr.length} งาน</div></div>
       <div class="pr-stats">
-        <span>รอแก้ไข <b>${open}</b></span><span>รอตรวจ <b>${pend}</b></span>
-        <span>ปิดงาน <b>${closed}</b></span><span class="over">เกินกำหนด <b>${over}</b></span>
+        <span>รอแก้ไข <b>${open}</b></span>
+        <span>เสร็จแล้ว <b>${closed}</b></span><span class="over">เกินกำหนด <b>${over}</b></span>
       </div>
     </div>
     <table class="pr-table"><thead><tr>
@@ -1401,6 +1397,25 @@ function editCat(id){
     catch(e){ toast('ลบไม่สำเร็จ','err'); } };
 }
 
+/* ---------- แก้ไขรายละเอียดงาน (ใครก็ได้) ---------- */
+function editTaskForm(id){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  openModal(`<h3>แก้ไขรายละเอียดงาน</h3><div class="sub">${t.code}</div>
+    <div class="form-group"><label>หมวดหมู่</label><select class="input" id="e-cat">${S.categories.map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="form-group"><label>พื้นที่ / ชื่อรายการงาน</label><input class="input" id="e-area" value="${esc(t.area)}"></div>
+    <div class="form-group"><label>รายละเอียด</label><textarea class="input" id="e-detail">${esc(t.detail||'')}</textarea></div>
+    <div class="btn-row">
+      <div class="form-group" style="flex:1;margin:0"><label>ผู้รับผิดชอบ</label><select class="input" id="e-assignee"><option value="">— ไม่ระบุ —</option>${S.users.map(u=>`<option value="${u.id}" ${u.id===t.assigneeId?'selected':''}>${esc(u.name)}</option>`).join('')}</select></div>
+      <div class="form-group" style="flex:1;margin:0"><label>ครบกำหนด</label><input class="input" type="date" id="e-due" value="${t.dueDate||''}"></div>
+    </div>
+    <button class="btn btn-fill" id="saveEdit" style="width:100%">บันทึก</button>`);
+  $('#saveEdit').onclick=async()=>{ const area=$('#e-area').value.trim(); if(!area){ toast('กรอกพื้นที่/ชื่องาน','err'); return; }
+    try{ await DATA.editTask(t,{ category:$('#e-cat').value, area, detail:$('#e-detail').value.trim(),
+        assigneeId:$('#e-assignee').value, dueDate:$('#e-due').value });
+      toast('บันทึกแล้ว','ok'); openTask(id); }
+    catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
+}
+
 /* ======================= LOGIN UI WIRE ======================= */
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault();
   const code=$('#loginCode').value; const btn=$('#loginForm button[type=submit]');
@@ -1410,6 +1425,10 @@ $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault();
   if(!ok){ $('#loginErr').textContent='ไม่พบรหัสนี้ในระบบ (whitelist)'; $('#loginCode').focus(); } });
 $$('.demo-chip').forEach(b=>b.onclick=()=>{ $('#loginCode').value=b.dataset.code; $('#loginErr').textContent=''; });
 $('#themeBtn').onclick=()=>applyTheme(S.theme==='dark'?'light':'dark');
+$('#refreshBtn').onclick=async()=>{ const sv=$('#refreshBtn svg'); sv.classList.add('spin');
+  try{ if(!DEMO) await DATA.refresh(); go(current); toast('อัปเดตข้อมูลล่าสุดแล้ว','ok'); }
+  catch(e){ toast('โหลดไม่สำเร็จ','err'); }
+  finally{ setTimeout(()=>sv.classList.remove('spin'),400); } };
 $('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">${ME.role==='supervisor'?'หัวหน้างาน':'พนักงาน'} · รหัส ${esc(ME.code)}</div>
   <button class="btn btn-danger" id="lo" style="width:100%">ออกจากระบบ</button>`); $('#lo').onclick=logout; };
 
