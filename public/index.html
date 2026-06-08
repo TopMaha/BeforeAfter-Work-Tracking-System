@@ -432,7 +432,7 @@ body.desktop-report .view{max-width:1180px}
   <form class="login-form" id="loginForm" autocomplete="off">
     <div class="field stagger">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <input id="loginCode" type="text" inputmode="numeric" placeholder="รหัสพนักงาน" required />
+      <input id="loginCode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="รหัสพนักงาน" required style="text-transform:uppercase" />
       <label for="loginCode">รหัสพนักงาน</label>
     </div>
     <div class="login-err" id="loginErr"></div>
@@ -440,10 +440,11 @@ body.desktop-report .view{max-width:1180px}
       <span>เข้าสู่ระบบ</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
-    <div class="login-hint stagger">บัญชีตัวอย่าง (แตะเพื่อกรอกอัตโนมัติ)</div>
+    <div class="login-hint stagger">รหัสพนักงานจากระบบ (ตัวอย่าง — แตะเพื่อกรอก)</div>
     <div class="demo-chips stagger">
-      <button type="button" class="demo-chip" data-code="1234">👷 หัวหน้างาน · 1234</button>
-      <button type="button" class="demo-chip" data-code="5678">🛠️ พนักงาน · 5678</button>
+      <button type="button" class="demo-chip" data-code="L-1827">L-1827</button>
+      <button type="button" class="demo-chip" data-code="G-260">G-260</button>
+      <button type="button" class="demo-chip" data-code="PST742">PST742</button>
     </div>
   </form>
 </section>
@@ -586,27 +587,73 @@ function seed(){
     {id:'c3',name:'Safety',color:'#dc2626'}
   ];
   const users=[
-    {id:'u1',code:'1234',name:'สมชาย หัวหน้างาน',role:'supervisor',lineUserId:''},
-    {id:'u2',code:'5678',name:'สมหญิง พนักงาน',role:'staff',lineUserId:''},
-    {id:'u3',code:'9999',name:'อนุชา ช่างซ่อม',role:'staff',lineUserId:''}
+    {id:'G-260',code:'G-260',name:'น.ส.เพชรลดา พรมมา',role:'staff',lineUserId:''},
+    {id:'L-1827',code:'L-1827',name:'นายสุทิศ ภูถมดี',role:'staff',lineUserId:''},
+    {id:'L-2101',code:'L-2101',name:'นายนพรัตน์ พวงพันธ์',role:'staff',lineUserId:''},
+    {id:'L-3501',code:'L-3501',name:'นายสุภัค โจนรัมย์',role:'staff',lineUserId:''},
+    {id:'L-1928',code:'L-1928',name:'นายกันยา สวนธิ',role:'staff',lineUserId:''},
+    {id:'L-3096',code:'L-3096',name:'นายบรรหาญ แสงอ่อน',role:'staff',lineUserId:''},
+    {id:'L-2480',code:'L-2480',name:'นายสมคิด ทรทึก',role:'staff',lineUserId:''},
+    {id:'L-3582',code:'L-3582',name:'นายกิตติภพ บัวองค์',role:'staff',lineUserId:''},
+    {id:'L-3012',code:'L-3012',name:'นายจีราวัฒน์ บวรเกษมพงศ์',role:'staff',lineUserId:''},
+    {id:'PST742',code:'PST742',name:'นางสาวจีรนันท์ ลดาพัน',role:'staff',lineUserId:''},
+    {id:'S-067',code:'S-067',name:'นายจำเนียร ทาเทพ',role:'staff',lineUserId:''},
+    {id:'L-603',code:'L-603',name:'นายรุ่งโรจน์ วรรณสุทธะ',role:'staff',lineUserId:''},
+    {id:'L-1101',code:'L-1101',name:'นายเดชา คำพิมูล',role:'staff',lineUserId:''},
+    {id:'PST802',code:'PST802',name:'นายวรรณชัย โพธิ์หล้า',role:'staff',lineUserId:''},
+    {id:'L-3591',code:'L-3591',name:'นายณัฐพงษ์ สีสันงาม',role:'staff',lineUserId:''},
+    {id:'PST709',code:'PST709',name:'นายวัชรินทร์ ยอดดี',role:'staff',lineUserId:''},
+    {id:'L-3609',code:'L-3609',name:'นายภคินัย สาผม',role:'staff',lineUserId:''},
+    {id:'TEMP117',code:'TEMP117',name:'นายคมกริช มุ่งงาม',role:'staff',lineUserId:''},
+    {id:'S-057',code:'S-057',name:'นายวิภาวัส จันทะคาม',role:'staff',lineUserId:''},
+    {id:'S-059',code:'S-059',name:'นายเกรียงไกร โพธิ์ศรี',role:'staff',lineUserId:''},
+    {id:'L-1879',code:'L-1879',name:'นายวิฑูรย์ สุขเลิศ',role:'staff',lineUserId:''},
+    {id:'T-204',code:'T-204',name:'นายวิรัตน์ หวังชอบ',role:'staff',lineUserId:''},
+    {id:'PST759',code:'PST759',name:'นายเอกชัย โก้พิมาย',role:'staff',lineUserId:''},
+    {id:'L-3610',code:'L-3610',name:'นายวัชรินทร์ คำศรี',role:'staff',lineUserId:''},
+    {id:'L-2488',code:'L-2488',name:'นายสราวุฒิ ปานทอง',role:'staff',lineUserId:''},
+    {id:'L-3527',code:'L-3527',name:'นายเกียรติศักดิ์ หล้ามณี',role:'staff',lineUserId:''},
+    {id:'S-046',code:'S-046',name:'นายสมศักดิ์ เครือลัดดา',role:'staff',lineUserId:''},
+    {id:'L-2499',code:'L-2499',name:'นายทรงศักดิ์ สืบเสระ',role:'staff',lineUserId:''},
+    {id:'L-3608',code:'L-3608',name:'นายประเวท กิ่งพุ่ม',role:'staff',lineUserId:''},
+    {id:'T-441',code:'T-441',name:'นายธนาศักดิ์ สุกระวัน',role:'staff',lineUserId:''},
+    {id:'L-2935',code:'L-2935',name:'นายพิสิษฐ์ อิ่มเพ็ง',role:'staff',lineUserId:''},
+    {id:'L-1058',code:'L-1058',name:'นายสรศักดิ์ สุริยะ',role:'staff',lineUserId:''},
+    {id:'L-3378',code:'L-3378',name:'นายจักรพันธ์ เทียนหอม',role:'staff',lineUserId:''},
+    {id:'L-2677',code:'L-2677',name:'นายชาคริต บุญศิริกร',role:'staff',lineUserId:''},
+    {id:'L-3583',code:'L-3583',name:'นายวันทนา สอนไชย',role:'staff',lineUserId:''},
+    {id:'S-038',code:'S-038',name:'นายณรงค์ งิ้วเขียว',role:'staff',lineUserId:''},
+    {id:'L-2929',code:'L-2929',name:'นายสุวรรณ สุขสถิตย์',role:'staff',lineUserId:''},
+    {id:'PST755',code:'PST755',name:'นายอำนาจ ดำรงกิจ',role:'staff',lineUserId:''},
+    {id:'L-2634',code:'L-2634',name:'นายภูณัทกิจ อ่อนวิมล',role:'staff',lineUserId:''},
+    {id:'L-3374',code:'L-3374',name:'นายปัญญา ประวันนา',role:'staff',lineUserId:''},
+    {id:'L-3431',code:'L-3431',name:'นายกฤษณ์ ซื้อจริง',role:'staff',lineUserId:''},
+    {id:'L-2659',code:'L-2659',name:'นายณรงค์ จอดพิมาย',role:'staff',lineUserId:''},
+    {id:'L-2658',code:'L-2658',name:'น.ส.มาลิณี จอดพิมาย',role:'staff',lineUserId:''},
+    {id:'L-1763',code:'L-1763',name:'นายสมชาย พรมชาติ',role:'staff',lineUserId:''},
+    {id:'L-3062',code:'L-3062',name:'นายอภิวัฒน์ หาดจันทร์',role:'staff',lineUserId:''},
+    {id:'L-1598',code:'L-1598',name:'นายสัญญา คิดโสดา',role:'staff',lineUserId:''},
+    {id:'L-3015',code:'L-3015',name:'นายวิรุต การุณรัตน์',role:'staff',lineUserId:''},
+    {id:'L-3035',code:'L-3035',name:'นายจักรินทร์ นิสสัยดี',role:'staff',lineUserId:''},
+    {id:'L-3611',code:'L-3611',name:'นายธีรพัฒน์ อินทร์สีดา',role:'staff',lineUserId:''}
   ];
   const now=Date.now();
   const t1={id:uid(),code:'BA-0001',category:'c3',area:'ทางเดินไลน์ผลิต A',
     detail:'พื้นมีน้ำมันหยด เสี่ยงลื่นล้ม ต้องทำความสะอาดและหาต้นเหตุ',
-    assigneeId:'u2',createdBy:'u1',dueDate:isoIn(2),status:'open',
+    assigneeId:'G-260',createdBy:'L-1827',dueDate:isoIn(2),status:'open',
     before:null,after:null,compare:null,
     createdAt:new Date(now-2*86400000).toISOString(),submittedAt:null,closedAt:null,closedBy:null,comments:[]};
   const t2={id:uid(),code:'BA-0002',category:'c1',area:'ชั้นวางอะไหล่ คลังB',
     detail:'อะไหล่วางไม่เป็นระเบียบ ไม่มีป้ายชี้บ่ง',
-    assigneeId:'u3',createdBy:'u1',dueDate:isoIn(-1),status:'open',
+    assigneeId:'L-2101',createdBy:'L-1827',dueDate:isoIn(-1),status:'open',
     before:null,after:null,compare:null,
     createdAt:new Date(now-5*86400000).toISOString(),submittedAt:null,closedAt:null,closedBy:null,
-    comments:[{id:uid(),userId:'u3',name:'อนุชา ช่างซ่อม',text:'กำลังดำเนินการครับ',at:new Date(now-1*86400000).toISOString()}]};
+    comments:[{id:uid(),userId:'L-2101',name:'นายนพรัตน์ พวงพันธ์',text:'กำลังดำเนินการครับ',at:new Date(now-1*86400000).toISOString()}]};
   return {
     users,categories:cats,tasks:[t1,t2],
     logs:[
-      {id:uid(),taskId:t1.id,type:'open',userId:'u1',name:'สมชาย หัวหน้างาน',at:t1.createdAt},
-      {id:uid(),taskId:t2.id,type:'open',userId:'u1',name:'สมชาย หัวหน้างาน',at:t2.createdAt}
+      {id:uid(),taskId:t1.id,type:'open',userId:'L-1827',name:'นายสุทิศ ภูถมดี',at:t1.createdAt},
+      {id:uid(),taskId:t2.id,type:'open',userId:'L-1827',name:'นายสุทิศ ภูถมดี',at:t2.createdAt}
     ],
     line:{token:'',groupId:'',groups:[],notify:true},
     counter:2, theme:'light'
@@ -740,7 +787,7 @@ window.addEventListener('resize',()=>moveIndicator(current));
 
 /* ======================= AUTH ======================= */
 async function login(code){
-  code=String(code).trim();
+  code=String(code).trim().toUpperCase();
   if(DEMO){ const u=S.users.find(x=>x.code===code); if(!u) return false;
     ME=u; localStorage.setItem(SKEY,u.id); enterApp(); return true; }
   try{ const r=await api('/api/login',{method:'POST',body:JSON.stringify({code})});
@@ -1295,9 +1342,9 @@ async function sendLine(taskId){
 /* ---------- Settings ---------- */
 VIEWS.settings = (root)=>{
   root.innerHTML=`
-    <div class="section-title">บัญชีผู้ใช้</div>
+    <div class="section-title">พนักงาน (whitelist)</div>
     <div class="card"><div id="userList"></div>
-      <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มผู้ใช้</button></div></div>
+      <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div></div>
 
     <div class="section-title">หมวดหมู่</div>
     <div class="card"><div id="catList"></div>
@@ -1328,7 +1375,6 @@ VIEWS.settings = (root)=>{
   // users
   const ul=$('#userList',root);
   S.users.forEach(u=> ul.appendChild(el(`<div class="lrow"><div class="li-main"><b>${esc(u.name)}</b><span>รหัส ${esc(u.code)}</span></div>
-    <span class="role-tag ${u.role==='supervisor'?'role-sup':'role-staff'}">${u.role==='supervisor'?'หัวหน้างาน':'พนักงาน'}</span>
     <button class="sw-mini" data-edit="${u.id}">✎</button></div>`)) );
   ul.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editUser(b.dataset.edit));
   $('#addUser',root).onclick=()=>editUser(null);
@@ -1361,19 +1407,16 @@ VIEWS.settings = (root)=>{
 };
 function editUser(id){
   const u=id?userById(id):{id:null,code:'',name:'',role:'staff',lineUserId:''};
-  openModal(`<h3>${id?'แก้ไข':'เพิ่ม'}ผู้ใช้</h3><div class="sub">รายชื่อ whitelist ที่เข้าระบบได้</div>
+  openModal(`<h3>${id?'แก้ไข':'เพิ่ม'}พนักงาน</h3><div class="sub">รายชื่อ whitelist ที่เข้าระบบได้</div>
     <div class="form-group"><label>ชื่อ-สกุล</label><input class="input" id="u-name" value="${esc(u.name)}"></div>
-    <div class="form-group"><label>รหัสพนักงาน (ใช้ login)</label><input class="input" id="u-code" inputmode="numeric" value="${esc(u.code)}"></div>
-    <div class="form-group"><label>สิทธิ์</label><select class="input" id="u-role">
-      <option value="staff" ${u.role==='staff'?'selected':''}>พนักงาน (ส่งงาน After)</option>
-      <option value="supervisor" ${u.role==='supervisor'?'selected':''}>หัวหน้างาน (เปิด/ปิดงาน, ตั้งค่า)</option></select></div>
+    <div class="form-group"><label>รหัสพนักงาน (ใช้ login)</label><input class="input" id="u-code" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase" value="${esc(u.code)}"></div>
     <div class="form-group"><label>LINE userId (ไว้ @mention)</label><input class="input" id="u-line" value="${esc(u.lineUserId||'')}" placeholder="ดักจาก webhook"></div>
     <button class="btn btn-fill" id="saveUser" style="width:100%">บันทึก</button>
-    ${id&&id!==ME.id?'<button class="btn btn-danger" id="delUser" style="width:100%;margin-top:10px">ลบผู้ใช้</button>':''}`);
-  $('#saveUser').onclick=async()=>{ const name=$('#u-name').value.trim(),code=$('#u-code').value.trim();
+    ${id&&id!==ME.id?'<button class="btn btn-danger" id="delUser" style="width:100%;margin-top:10px">ลบพนักงาน</button>':''}`);
+  $('#saveUser').onclick=async()=>{ const name=$('#u-name').value.trim(),code=$('#u-code').value.trim().toUpperCase();
     if(!name||!code){ toast('กรอกชื่อและรหัส','err'); return; }
     if(S.users.some(x=>x.code===code && x.id!==id)){ toast('รหัสนี้ถูกใช้แล้ว','err'); return; }
-    try{ await DATA.saveUser({ id:id||undefined, code, name, role:$('#u-role').value, lineUserId:$('#u-line').value.trim() });
+    try{ await DATA.saveUser({ id:id||undefined, code, name, role:'staff', lineUserId:$('#u-line').value.trim() });
       closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); }
     catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
   const d=$('#delUser'); if(d) d.onclick=async()=>{ if(!confirm('ลบผู้ใช้นี้?'))return;
@@ -1429,7 +1472,7 @@ $('#refreshBtn').onclick=async()=>{ const sv=$('#refreshBtn svg'); sv.classList.
   try{ if(!DEMO) await DATA.refresh(); go(current); toast('อัปเดตข้อมูลล่าสุดแล้ว','ok'); }
   catch(e){ toast('โหลดไม่สำเร็จ','err'); }
   finally{ setTimeout(()=>sv.classList.remove('spin'),400); } };
-$('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">${ME.role==='supervisor'?'หัวหน้างาน':'พนักงาน'} · รหัส ${esc(ME.code)}</div>
+$('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">รหัสพนักงาน ${esc(ME.code)}</div>
   <button class="btn btn-danger" id="lo" style="width:100%">ออกจากระบบ</button>`); $('#lo').onclick=logout; };
 
 /* ======================= BOOT ======================= */

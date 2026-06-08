@@ -80,9 +80,9 @@ INSERT OR IGNORE INTO categories (id,name,color) VALUES
   ('c2','Improvement','#16a34a'),
   ('c3','Safety','#dc2626');
 
-INSERT OR IGNORE INTO users (id,code,name,role) VALUES
-  ('u1','1234','สมชาย หัวหน้างาน','supervisor'),
-  ('u2','5678','สมหญิง พนักงาน','staff');
+-- รายชื่อพนักงาน (whitelist) นำเข้าจากไฟล์แยก:
+--   wrangler d1 execute ba-track --remote --file=./seed-employees.sql
+-- (ไม่มีการแยกสิทธิ์หัวหน้า/ลูกน้อง — role เก็บเป็น 'staff' ทั้งหมด)
 
 INSERT OR IGNORE INTO app_config (key,value) VALUES
   ('task_counter','0'),
