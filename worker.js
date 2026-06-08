@@ -67,6 +67,9 @@ export default {
       if (pathname === '/api/line/notify' && req.method === 'POST')
         return json(await lineNotifyTask((await req.json()).taskId, env), 200, cors);
 
+      // ---- ไม่ใช่ API → เสิร์ฟไฟล์ static (index.html/PWA) ----
+      if (!pathname.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(req);
+
       return json({ error: 'not found' }, 404, cors);
     } catch (e) {
       return json({ error: String(e && e.message || e) }, 500, cors);

@@ -2,12 +2,17 @@ name = "ba-track"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# ---- Static site (เสิร์ฟ index.html/PWA จาก Worker เดียวกัน) ----
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
 # ---- D1 (ฐานข้อมูล structured) ----
 # สร้างด้วย:  wrangler d1 create ba-track   แล้วเอา database_id มาใส่
 [[d1_databases]]
 binding = "DB"
 database_name = "ba-track"
-database_id = "PUT-YOUR-D1-DATABASE-ID-HERE"
+database_id = "09849667-7c87-40bc-893f-ebb8aae419a3"
 
 # ---- R2 (เก็บรูปภาพทั้งหมด) ----
 # สร้างด้วย:  wrangler r2 bucket create ba-track-images
