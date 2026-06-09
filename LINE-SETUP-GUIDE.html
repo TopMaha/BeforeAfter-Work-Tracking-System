@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คู่มือเชื่อม LINE — Before/After Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:"Noto Sans Thai",sans-serif}
+  body{background:#0b1220;color:#eef3fb;padding:24px 14px 60px;line-height:1.55}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:24px;font-weight:800;margin-bottom:4px}
+  h1 .g{color:#06c755}
+  .lead{color:#a9b6cc;font-size:14px;margin-bottom:24px}
+  .step{background:#131c30;border:1px solid #243049;border-radius:18px;padding:18px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .step-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .num{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#06c755,#04a544);color:#fff;font-weight:800;display:grid;place-items:center;flex-shrink:0;font-size:16px}
+  .step-h b{font-size:17px}
+  .note{font-size:13.5px;color:#a9b6cc;margin-top:10px}
+  .note b{color:#eef3fb}
+  /* browser mockup */
+  .mock{background:#fff;border-radius:12px;overflow:hidden;margin-top:6px;color:#1f2937;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  .bar{background:#e9eef5;padding:8px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #d7dee8}
+  .bar i{width:11px;height:11px;border-radius:50%;background:#cbd5e1}
+  .url{flex:1;background:#fff;border-radius:7px;padding:4px 10px;font-size:11px;color:#475569;margin-left:8px}
+  .screen{padding:16px;position:relative;min-height:120px}
+  .lnhead{display:flex;align-items:center;gap:8px;font-weight:800;color:#06c755;margin-bottom:14px}
+  .lnhead .logo{width:24px;height:24px;border-radius:6px;background:#06c755;color:#fff;display:grid;place-items:center;font-size:13px}
+  .tabs{display:flex;gap:6px;border-bottom:2px solid #e5e9f0;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:8px 14px;font-size:13px;font-weight:700;color:#64748b;border-bottom:3px solid transparent;margin-bottom:-2px}
+  .tab.on{color:#1f2937;border-bottom-color:#06c755;position:relative}
+  .btn{display:inline-block;background:#06c755;color:#fff;font-weight:700;padding:9px 18px;border-radius:8px;font-size:14px}
+  .btn.line{background:#06c755}
+  .btn.gray{background:#e2e8f0;color:#334155}
+  .card-pick{display:flex;gap:10px;flex-wrap:wrap}
+  .ch{border:2px solid #e5e9f0;border-radius:10px;padding:12px;width:140px;text-align:center;font-size:12.5px;font-weight:700;color:#475569}
+  .ch.on{border-color:#06c755;background:#ecfdf3;color:#04a544}
+  .field{border:1px solid #d7dee8;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#94a3b8;margin-bottom:8px;background:#f8fafc}
+  .tokrow{border:1px dashed #06c755;border-radius:10px;padding:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .tokrow .lbl{font-size:12.5px;font-weight:700;color:#334155}
+  .tokbox{font-family:monospace;font-size:11px;color:#94a3b8;background:#fff;border:1px solid #d7dee8;border-radius:6px;padding:6px 8px;flex:1;min-width:120px}
+  /* arrow + pointer */
+  .point{position:relative}
+  .arrow{position:absolute;font-size:13px;font-weight:800;color:#ff3b30;display:flex;align-items:center;gap:5px}
+  .ring{position:absolute;border:3px solid #ff3b30;border-radius:12px;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.35)}50%{box-shadow:0 0 0 7px rgba(255,59,48,0)}}
+  .tag{display:inline-block;background:#ff3b30;color:#fff;font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;margin-top:8px}
+  .final{background:linear-gradient(135deg,#06c75522,#04a54411);border:1px solid #06c75555;border-radius:18px;padding:20px;text-align:center}
+  .final b{font-size:18px;color:#06c755}
+  .chip{display:inline-block;background:#1d2a44;border:1px solid #324063;border-radius:8px;padding:6px 12px;font-size:13px;margin:4px;font-weight:700}
+  code{background:#1d2a44;border:1px solid #324063;border-radius:5px;padding:1px 6px;font-size:12.5px;color:#93c5fd}
+  .warn{background:#3a2c08;border:1px solid #5b4a12;color:#fbbf24;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>เชื่อม <span class="g">LINE</span> เข้ากับระบบ Before/After</h1>
+  <p class="lead">ทำ 4 สเต็ปนี้บนคอม (~3 นาที) แล้วก๊อป <b>Channel access token</b> ส่งกลับมาในแชต — ที่เหลือผมจัดการให้</p>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-h"><div class="num">1</div><b>เปิดเว็บ &amp; สร้าง Provider</b></div>
+    <div class="note">เข้า <code>developers.line.biz/console</code> → กด <b>Log in</b> (ด้วย LINE ของคุณ) → กดปุ่ม <b>Create</b> ใต้หัวข้อ Providers</div>
+    <div class="mock">
+      <div class="bar"><i></i><i></i><i></i><div class="url">https://developers.line.biz/console/</div></div>
+      <div class="screen">
+        <div class="lnhead"><span class="logo">L</span> LINE Developers</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px">Providers</div>
+        <div class="point" style="display:inline-block">
+          <span class="btn">＋ Create</span>
+          <div class="ring" style="inset:-6px"></div>
+        </div>
+        <div class="tag">① กดปุ่มนี้</div>
+        <div class="note">ตั้งชื่อ Provider อะไรก็ได้ เช่น <b>TopMaha</b> แล้วกด Create</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-h"><div class="num">2</div><b>เลือกชนิด Channel = Messaging API</b></div>
+    <div class="note">หลังสร้าง Provider จะมีให้เลือกชนิด channel → เลือกการ์ด <b>Messaging API</b></div>
+    <div class="mock">
+      <div class="bar"><i></i><i></i><i></i><div class="url">.../console/ → New channel</div></div>
+      <div class="screen">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px">Create a new channel</div>
+        <div class="card-pick">
+          <div class="ch">LINE Login</div>
+          <div class="ch on point">Messaging&nbsp;API
+            <div class="ring" style="inset:-5px"></div>
+          </div>
+          <div class="ch">LINE MINI App</div>
+        </div>
+        <div class="tag">② เลือก “Messaging API”</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-h"><div class="num">3</div><b>กรอกข้อมูลบอท แล้ว Create</b></div>
+    <div class="note">กรอกชื่อบอท + ข้อมูลที่บังคับ (ติ๊กยอมรับเงื่อนไข) แล้วกด <b>Create</b> ล่างสุด</div>
+    <div class="mock">
+      <div class="bar"><i></i><i></i><i></i><div class="url">.../create</div></div>
+      <div class="screen">
+        <div class="field">Channel name &nbsp;→&nbsp; <b style="color:#1f2937">BA Tracking</b></div>
+        <div class="field">Channel description → ระบบติดตามงานแก้ไข</div>
+        <div class="field">Category / Email → (เลือก/กรอกตามจริง)</div>
+        <div class="point" style="display:inline-block">
+          <span class="btn">Create</span>
+          <div class="ring" style="inset:-6px"></div>
+        </div>
+        <div class="tag">③ กด Create</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-h"><div class="num">4</div><b>แท็บ Messaging API → Issue token (จุดที่หาไม่เจอ!)</b></div>
+    <div class="note"><b style="color:#ff6b6b">สำคัญ:</b> token ไม่ได้อยู่แท็บแรก! ต้องกดแท็บ <b>Messaging API</b> ก่อน แล้ว <b>เลื่อนลงล่างสุด</b> จะเจอ <b>Channel access token (long-lived)</b> → กด <b>Issue</b></div>
+    <div class="mock">
+      <div class="bar"><i></i><i></i><i></i><div class="url">.../channel/.../messaging-api</div></div>
+      <div class="screen">
+        <div class="tabs">
+          <div class="tab">Basic settings</div>
+          <div class="tab on point">Messaging API
+            <div class="arrow" style="top:-26px;left:0">⬇ ④ กดแท็บนี้ก่อน</div>
+          </div>
+          <div class="tab">LIFF</div>
+        </div>
+        <div class="note" style="margin:0 0 12px">⬇ เลื่อนหน้าลงไปล่างสุด จะเจอกล่องนี้:</div>
+        <div class="tokrow point">
+          <div>
+            <div class="lbl">Channel access token (long-lived)</div>
+            <div class="tokbox">— ยังว่าง กด Issue เพื่อสร้าง —</div>
+          </div>
+          <div class="point" style="display:inline-block">
+            <span class="btn">Issue</span>
+            <div class="ring" style="inset:-6px"></div>
+          </div>
+          <div class="ring" style="inset:-4px"></div>
+        </div>
+        <div class="tag">⑤ กด Issue → ก๊อปข้อความยาวๆ ที่ได้</div>
+        <div class="warn">เปิด <b>Allow bot to join group chats = ON</b> ในแท็บนี้ด้วย (ไว้เชิญบอทเข้ากลุ่ม)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="final">
+    <b>เสร็จแล้ว! 🎉</b>
+    <p style="margin:8px 0 2px;color:#cbd5e1;font-size:14px">ก๊อป token ที่ได้ (ขึ้นต้นยาวๆ) มาวางในแชตกับผม</p>
+    <div style="margin-top:8px">
+      <span class="chip">วาง token → ผมตั้ง secret ให้</span>
+      <span class="chip">ผมตั้ง Webhook ให้</span>
+      <span class="chip">ดัก Group ID อัตโนมัติ</span>
+      <span class="chip">ทดสอบยิงให้เห็นจริง</span>
+    </div>
+    <p style="margin-top:14px;color:#94a3b8;font-size:13px">บนมือถือ: แท็บ Messaging API มี <b>QR code</b> → สแกนเพิ่มบอทเป็นเพื่อน → เชิญบอทเข้า “กลุ่มงาน” ที่ใช้อยู่</p>
+  </div>
+
+  <p style="text-align:center;color:#64748b;font-size:12px;margin-top:22px">ถ้ายังงงหรือ LINE ยุ่งยากไป — พิมพ์ “Telegram” ผมเปลี่ยนให้ใช้ Telegram bot (ง่ายกว่ามาก) ได้ทันที</p>
+</div>
+</body>
+</html>

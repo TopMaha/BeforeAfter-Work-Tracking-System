@@ -183,6 +183,9 @@ img{display:block;max-width:100%}
 .stat.s-closed{background:linear-gradient(135deg,#16a34a,#15803d)}
 .stat.s-overdue{background:linear-gradient(135deg,#ef4444,#b91c1c)}
 .stat:nth-child(2){animation-delay:.05s}.stat:nth-child(3){animation-delay:.1s}.stat:nth-child(4){animation-delay:.15s}
+.stat.stat-btn{cursor:pointer;opacity:.9;transition:opacity .2s var(--ease),transform .18s var(--ease),box-shadow .2s}
+.stat.stat-btn:active{transform:scale(.96)}
+.stat.stat-active{opacity:1;transform:translateY(-3px);box-shadow:0 16px 32px rgba(0,0,0,.28),inset 0 0 0 3px rgba(255,255,255,.92)}
 
 /* task card */
 .task-card{padding:14px;margin-bottom:13px;display:flex;gap:13px;align-items:stretch;animation:viewIn .45s var(--ease) both}
@@ -290,40 +293,36 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sw-mini:active{transform:scale(.9)}
 .dot-color{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 
-/* ============================ BOTTOM NAV (clean pill) ============================ */
+/* ============================ BOTTOM NAV (expanding pill) ============================ */
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:40;
-  width:min(430px,calc(100% - 20px));height:64px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:40;
+  display:flex;align-items:center;gap:6px;padding:8px;
   background:color-mix(in srgb,var(--surface) 88%,transparent);
   -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
-  border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow-lg);
-  display:flex;align-items:center;justify-content:space-around;padding:0 8px;
+  border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow-lg);
 }
 .nav-indicator{display:none}
-.nav-btn{position:relative;flex:1;height:48px;display:flex;align-items:center;justify-content:center;
-  color:var(--text-2);transition:color .3s var(--ease)}
-.nav-btn .pillbg{position:absolute;inset:4px 8px;border-radius:15px;
+.nav-btn{position:relative;display:flex;align-items:center;height:48px;padding:0 15px;border-radius:16px;
+  color:var(--text-2);transition:color .3s var(--ease),transform .12s var(--ease)}
+.nav-btn .pillbg{position:absolute;inset:0;border-radius:16px;
   background:linear-gradient(135deg,var(--blue-500),var(--blue-700));box-shadow:0 8px 18px rgba(37,99,235,.4);
-  opacity:0;transform:scale(.55);transition:opacity .32s var(--ease),transform .32s var(--ease)}
-.nav-btn svg{position:relative;z-index:1;width:25px;height:25px;stroke-width:2.1;transition:transform .3s var(--ease)}
+  opacity:0;transform:scale(.7);transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.nav-btn svg{position:relative;z-index:1;width:24px;height:24px;stroke-width:2.1;flex-shrink:0}
+.nav-btn .nlabel{position:relative;z-index:1;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
+  font-weight:800;font-size:14px;transition:max-width .35s var(--ease),opacity .25s,margin-left .35s var(--ease)}
 .nav-btn.active{color:#fff}
 .nav-btn.active .pillbg{opacity:1;transform:scale(1)}
-.nav-btn.active svg{transform:scale(1.06)}
-.nav-btn:active svg{transform:scale(.84)}
-/* notification badge */
-.dock-badge{position:absolute;top:2px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;
-  background:var(--red);color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;
-  box-shadow:0 0 0 2px var(--surface);z-index:3;line-height:1}
-.dock-badge.show{display:flex;animation:pop .3s var(--ease)}
-/* center add */
-.nav-add{flex:0 0 auto;position:relative;display:flex;align-items:center}
-.nav-add .plus{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(135deg,var(--blue-400),var(--blue-700));
-  box-shadow:0 12px 24px rgba(37,99,235,.5);transform:translateY(-12px);transition:transform .2s var(--ease)}
-.nav-add .plus svg{width:30px;height:30px;stroke-width:2.6}
-.nav-add.active .plus{box-shadow:0 0 0 4px var(--primary-soft),0 12px 24px rgba(37,99,235,.6)}
-.nav-add:active .plus{transform:translateY(-12px) scale(.9)}
+.nav-btn.active .nlabel{max-width:96px;opacity:1;margin-left:8px}
+.nav-btn:active{transform:scale(.93)}
+/* Floating Add button (FAB) */
+.fab{position:fixed;right:18px;z-index:41;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);
+  width:56px;height:56px;border-radius:18px;display:none;place-items:center;color:#fff;
+  background:linear-gradient(135deg,var(--blue-400),var(--blue-700));box-shadow:0 14px 30px rgba(37,99,235,.5);
+  transition:transform .2s var(--ease),box-shadow .2s}
+.fab svg{width:30px;height:30px;stroke-width:2.6}
+.fab:active{transform:scale(.88) rotate(90deg)}
+.fab.active{box-shadow:0 0 0 4px var(--primary-soft),0 14px 30px rgba(37,99,235,.55)}
 
 /* ============================ 3D COVERFLOW (dashboard) ============================ */
 .coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
@@ -486,28 +485,25 @@ body.desktop-report .view{max-width:1180px}
 
 <!-- bottom nav -->
 <nav class="nav" id="nav" style="display:none">
-  <span class="nav-indicator" id="navInd"></span>
   <button class="nav-btn" data-route="dashboard" title="หน้าหลัก" aria-label="หน้าหลัก">
     <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
-  </button>
-  <button class="nav-btn" data-route="tasks" title="งานทั้งหมด" aria-label="งานทั้งหมด">
-    <span class="pillbg"></span>
-    <span class="dock-badge" id="tasksBadge"></span>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5h.01M4 12h.01M4 19h.01"/></svg>
-  </button>
-  <button class="nav-add" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
-    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span class="nlabel">หน้าหลัก</span>
   </button>
   <button class="nav-btn" data-route="report" title="รายงาน" aria-label="รายงาน">
     <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    <span class="nlabel">รายงาน</span>
   </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
     <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
+    <span class="nlabel">ตั้งค่า</span>
   </button>
 </nav>
+<button class="fab" id="fab" title="เปิดงานใหม่" aria-label="เปิดงานใหม่" style="display:none" data-route="add">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
 
 <!-- modal + toasts -->
 <div class="modal-back" id="modalBack"><div class="modal" id="modal"></div></div>
@@ -797,39 +793,25 @@ function closeModal(){ modalBack.classList.remove('show'); document.body.style.o
 modalBack.addEventListener('click',e=>{ if(e.target===modalBack) closeModal(); });
 
 /* ======================= ROUTER ======================= */
-const ROUTES = ['dashboard','tasks','add','report','settings'];
-const TITLES = {dashboard:'หน้าหลัก',tasks:'งานทั้งหมด',add:'เปิดงานใหม่',report:'รายงาน',settings:'ตั้งค่า'};
+const ROUTES = ['dashboard','add','report','settings'];
+const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',report:'รายงาน',settings:'ตั้งค่า'};
 let current='dashboard';
 
 function go(route){
   if(!ROUTES.includes(route)) route='dashboard';
   current=route; $('#barTitle').textContent=TITLES[route];
-  moveIndicator(route); markNav(route);
+  markNav(route);
   const host=$('#views');
   const render = VIEWS[route];
   const wrap=el('<div class="view view-enter"></div>');
   host.innerHTML=''; host.appendChild(wrap);
   render(wrap);
-  updateNavBadges();
-}
-/* badge แจ้งเตือนบนไอคอน "งาน" = จำนวนงานที่ยังรอแก้ไข (สไตล์ dock) */
-function updateNavBadges(){
-  const open=S.tasks.filter(t=>t.status==='open').length;
-  const b=$('#tasksBadge'); if(!b) return;
-  b.textContent=open>99?'99+':open; b.classList.toggle('show',open>0);
 }
 function markNav(route){
-  $$('.nav [data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
-}
-function moveIndicator(route){
-  const btn=$(`.nav .nav-btn[data-route="${route}"]`); const ind=$('#navInd');
-  if(!btn){ ind.style.opacity=0; return; }   // อยู่หน้า "เพิ่มงาน" → ซ่อนแถบ (ใช้ปุ่มบวกแทน)
-  ind.style.opacity=1;
-  const nav=$('#nav').getBoundingClientRect(); const b=btn.getBoundingClientRect();
-  ind.style.left=(b.left-nav.left + b.width/2 - 27)+'px';
+  $$('[data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
 }
 $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
-window.addEventListener('resize',()=>moveIndicator(current));
+$('#fab').addEventListener('click',()=>go('add'));
 
 /* ======================= AUTH ======================= */
 async function login(code){
@@ -850,9 +832,8 @@ function enterApp(){
   $('#app').classList.add('show');
   $('#nav').style.display='flex';
   $('#meBtn').textContent = ME.name.trim().charAt(0);
+  $('#fab').style.display='grid';
   go('dashboard');
-  requestAnimationFrame(()=>moveIndicator('dashboard'));
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>moveIndicator(current));
   notifyDue();
 }
 
@@ -874,11 +855,11 @@ function hydrateAll(root){ $$('img[data-img]',root).forEach(hydrateImg); }
 const VIEWS = {};
 
 /* ---------- Dashboard ---------- */
+let DASH={status:'all',q:''};
 VIEWS.dashboard = (root)=>{
   const t=S.tasks;
-  const open=t.filter(x=>x.status==='open').length;
-  const closed=t.filter(x=>x.status==='closed').length;
-  const overdue=t.filter(isOverdue).length;
+  const counts={ open:t.filter(x=>x.status==='open').length, closed:t.filter(x=>x.status==='closed').length,
+    overdue:t.filter(isOverdue).length, all:t.length };
   const recent=t.filter(x=>x.before||x.after||x.compare)
     .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,8);
   root.innerHTML=`
@@ -888,20 +869,36 @@ VIEWS.dashboard = (root)=>{
     </div>
     ${recent.length?`<div class="section-title" style="margin:18px 4px 4px">ภาพรวมงานล่าสุด</div>
       <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack">${recent.map(cfCard).join('')}</div></div>`:''}
-    <div class="stat-grid" style="margin-top:14px">
-      ${statCard('s-open',open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/>')}
-      ${statCard('s-closed',closed,'เสร็จแล้ว','<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/>')}
-      ${statCard('s-overdue',overdue,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>')}
-      ${statCard('s-pending',t.length,'ทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>')}
+    <div class="section-title" style="margin:16px 4px 8px">แตะการ์ดเพื่อกรองงาน</div>
+    <div class="stat-grid" id="statFilters">
+      ${statCard('s-open',counts.open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/>','open')}
+      ${statCard('s-closed',counts.closed,'เสร็จแล้ว','<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/>','closed')}
+      ${statCard('s-overdue',counts.overdue,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>','overdue')}
+      ${statCard('s-pending',counts.all,'ทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>','all')}
     </div>
-    ${overdue?`<div class="card tap" id="goOverdue" style="margin-top:14px;padding:14px;display:flex;align-items:center;gap:12px;border-color:var(--red)">
-      <div style="width:40px;height:40px;border-radius:12px;background:var(--red-bg);color:var(--red);display:grid;place-items:center;flex-shrink:0">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg></div>
-      <div style="flex:1"><b style="color:var(--red)">งานเกินกำหนด ${overdue} รายการ</b><div style="font-size:13px;color:var(--text-2)">แตะเพื่อดูและจัดการด่วน</div></div>
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
-    </div>`:''}
-    <div style="height:6px"></div>`;
-  const ov=$('#goOverdue',root); if(ov) ov.onclick=()=>{ TASK_FILTER.status='overdue'; go('tasks'); };
+    <div class="search-box" style="margin-top:16px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+      <input id="dq" placeholder="ค้นหา รหัส / พื้นที่ / รายละเอียด" value="${esc(DASH.q)}">
+    </div>
+    <div class="section-title" id="dlistTitle" style="margin:16px 4px 10px"></div>
+    <div id="dlist"></div>`;
+  const statEls=$$('#statFilters .stat',root);
+  const titleEl=$('#dlistTitle',root);
+  const LBL={open:'รอแก้ไข',closed:'เสร็จแล้ว',overdue:'เกินกำหนด',all:'ทั้งหมด'};
+  const applyActive=()=>statEls.forEach(s=>s.classList.toggle('stat-active',s.dataset.filter===DASH.status));
+  function renderList(){
+    let arr=t.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    if(DASH.status==='overdue') arr=arr.filter(isOverdue);
+    else if(DASH.status!=='all') arr=arr.filter(x=>x.status===DASH.status);
+    if(DASH.q){ const q=DASH.q.toLowerCase(); arr=arr.filter(x=>(x.code+' '+x.area+' '+(x.detail||'')).toLowerCase().includes(q)); }
+    titleEl.textContent=`${LBL[DASH.status]||''} (${arr.length})`;
+    const host=$('#dlist',root); host.innerHTML='';
+    if(!arr.length){ host.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><b>ไม่พบงาน</b><div style="font-size:13px">ลองเปลี่ยนตัวกรองหรือคำค้นหา</div></div>`)); return; }
+    arr.forEach(x=>host.appendChild(taskCard(x))); hydrateAll(host);
+  }
+  statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); renderList(); });
+  $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; renderList(); });
+  applyActive(); renderList();
   setupCoverflow(root);
   hydrateAll(root);
 };
@@ -930,8 +927,8 @@ function setupCoverflow(root){
   track.querySelectorAll('.cf-card').forEach(cd=>cd.addEventListener('click',()=>openTask(cd.dataset.id)));
   requestAnimationFrame(upd); setTimeout(upd,150); setTimeout(upd,450);
 }
-function statCard(cls,n,l,svg){
-  return `<div class="stat ${cls}"><div class="n">${n}</div><div class="l">${l}</div>
+function statCard(cls,n,l,svg,key){
+  return `<div class="stat ${cls}${key?' stat-btn':''}"${key?` data-filter="${key}"`:''}><div class="n">${n}</div><div class="l">${l}</div>
     <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></div></div>`;
 }
 
@@ -1046,7 +1043,7 @@ VIEWS.add = (root)=>{
       const t=await DATA.createTask({ category:$('#f-cat',root).value, area,
         detail:$('#f-detail',root).value.trim(), assigneeId:'',
         dueDate:$('#f-due',root).value }, pendBefore);
-      toast('เปิดงาน '+(t&&t.code?t.code:'')+' สำเร็จ','ok'); go('tasks');
+      toast('เปิดงาน '+(t&&t.code?t.code:'')+' สำเร็จ','ok'); DASH.status='open'; go('dashboard');
     }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err');
       btn.disabled=false; btn.innerHTML='เปิดงาน'; }
   };
