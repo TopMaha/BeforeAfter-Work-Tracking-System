@@ -327,7 +327,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   border-radius:26px 26px 0 0;padding:8px 18px calc(env(safe-area-inset-bottom,0px) + 24px);
   transform:translateY(40px) scale(.98);opacity:0;transition:transform .38s var(--ease),opacity .3s}
 .modal-back.show .modal{transform:none;opacity:1}
-.modal-grab{width:42px;height:5px;border-radius:3px;background:var(--border-2);margin:8px auto 14px}
+.modal-head{position:sticky;top:0;z-index:6;margin:-8px -18px 8px;padding:8px 18px 6px;background:var(--surface);
+  border-radius:26px 26px 0 0;display:flex;align-items:center;justify-content:center}
+.modal-grab{width:42px;height:5px;border-radius:3px;background:var(--border-2);margin:4px auto 8px}
+.modal-x{position:absolute;right:12px;top:8px;width:36px;height:36px;border-radius:50%;background:var(--surface-3);
+  color:var(--text-2);border:1px solid var(--border);font-size:17px;font-weight:700;line-height:1;display:grid;place-items:center;transition:transform .12s}
+.modal-x:active{transform:scale(.88)}
 .modal h3{margin:0 0 4px;font-size:20px;font-weight:800}
 .modal .sub{color:var(--text-2);font-size:13px;margin-bottom:16px}
 @media(min-width:620px){
@@ -689,6 +694,15 @@ const DATA = {
     await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({after:t.after,compare:t.compare,status:'closed',submittedAt:now,closedAt:now,closedBy:ME.id,_log:'done',_userId:ME.id,_userName:ME.name})});
     await this.refresh(); },
 
+  // เปลี่ยน/เพิ่มรูป Before หรือ After (ใครก็ได้)
+  async setPhoto(t, which, blob){   // which = 'before' | 'after'
+    const key=DEMO?uid():(which+'-'+uid()); await IMG.put(key,blob); t[which]=key;
+    if(t.before && t.after) await buildCompare(t);
+    if(DEMO){ logAdd(t.id,'edit'); save(); return; }
+    const patch={_log:'edit',_userId:ME.id,_userName:ME.name}; patch[which]=key; if(t.compare) patch.compare=t.compare;
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify(patch)});
+    await this.refresh(); },
+
   // แก้ไขรายละเอียดงาน (ใครก็ได้)
   async editTask(t, f){
     Object.assign(t, f);
@@ -746,7 +760,10 @@ function toast(msg,kind='info'){
 
 /* ======================= MODAL ======================= */
 const modalBack=$('#modalBack'), modalEl=$('#modal');
-function openModal(html){ modalEl.innerHTML='<div class="modal-grab"></div>'+html;
+function openModal(html){
+  modalEl.innerHTML='<div class="modal-head"><div class="modal-grab"></div><button type="button" class="modal-x" aria-label="ปิด">✕</button></div>'+html;
+  const x=modalEl.querySelector('.modal-x'); if(x) x.onclick=closeModal;
+  modalEl.scrollTop=0;
   modalBack.classList.add('show'); document.body.style.overflow='hidden'; }
 function closeModal(){ modalBack.classList.remove('show'); document.body.style.overflow=''; }
 modalBack.addEventListener('click',e=>{ if(e.target===modalBack) closeModal(); });
@@ -806,7 +823,7 @@ function enterApp(){
 
 /* notify near-due / overdue assigned to me */
 function notifyDue(){
-  const mine=S.tasks.filter(t=>t.assigneeId===ME.id && t.status!=='closed');
+  const mine=S.tasks.filter(t=>t.createdBy===ME.id && t.status!=='closed');
   const over=mine.filter(isOverdue).length;
   const near=mine.filter(t=>{const d=daysLeft(t.dueDate);return d!==null&&d>=0&&d<=1;}).length;
   if(over) toast(`มีงานเกินกำหนด ${over} งาน`,'err');
@@ -827,8 +844,8 @@ VIEWS.dashboard = (root)=>{
   const open=t.filter(x=>x.status==='open').length;
   const closed=t.filter(x=>x.status==='closed').length;
   const overdue=t.filter(isOverdue).length;
-  const mine=t.filter(x=>x.assigneeId===ME.id && x.status!=='closed')
-    .sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
+  const mine=t.filter(x=>x.createdBy===ME.id)
+    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   root.innerHTML=`
     <div style="margin:2px 4px 4px">
       <div style="font-size:14px;color:var(--text-2);font-weight:600">สวัสดี 👋</div>
@@ -846,10 +863,10 @@ VIEWS.dashboard = (root)=>{
       <div style="flex:1"><b style="color:var(--red)">งานเกินกำหนด ${overdue} รายการ</b><div style="font-size:13px;color:var(--text-2)">แตะเพื่อดูและจัดการด่วน</div></div>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </div>`:''}
-    <div class="section-title">งานของฉัน (${mine.length})</div>
+    <div class="section-title">งานที่ฉันส่ง (${mine.length})</div>
     <div id="mine"></div>`;
   const m=$('#mine',root);
-  if(!mine.length) m.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ไม่มีงานค้าง</b><div style="font-size:13px">ยอดเยี่ยม! งานของคุณเคลียร์หมดแล้ว</div></div>`));
+  if(!mine.length) m.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ยังไม่มีรายการที่คุณส่ง</b><div style="font-size:13px">กดปุ่ม + เพื่อเปิดงานใหม่</div></div>`));
   else mine.forEach(x=> m.appendChild(taskCard(x)));
   const ov=$('#goOverdue',root); if(ov) ov.onclick=()=>{ TASK_FILTER.status='overdue'; go('tasks'); };
   hydrateAll(root);
@@ -861,7 +878,7 @@ function statCard(cls,n,l,svg){
 
 /* ---------- task card ---------- */
 function taskCard(t){
-  const cat=catById(t.category); const a=userById(t.assigneeId);
+  const cat=catById(t.category); const a=userById(t.createdBy);
   const dl=daysLeft(t.dueDate); const ov=isOverdue(t);
   const c=el(`<div class="card tap task-card">
     <div class="task-thumbs">
@@ -876,7 +893,7 @@ function taskCard(t){
       <p class="task-title">${esc(t.area)}</p>
       <div class="task-meta">
         <span class="chip chip-cat">${cat?esc(cat.name):'-'}</span>
-        <span class="assignee">👤 ${a?esc(a.name.split(' ')[0]):'-'}</span>
+        <span class="assignee">✍️ ${a?esc(a.name.split(' ')[0]):'-'}</span>
         ${t.dueDate?`<span class="due ${ov?'overdue':''}">📅 ${fmtDate(t.dueDate)}${ov?' · เกิน':(dl!=null&&dl<=2?` · เหลือ ${dl}ว`:'')}</span>`:''}
       </div>
     </div>
@@ -920,7 +937,6 @@ VIEWS.tasks = (root)=>{
 let pendBefore=null; // {blob}
 VIEWS.add = (root)=>{
   pendBefore=null;
-  const staff=S.users;
   root.innerHTML=`
     <div class="card" style="padding:16px">
       <div class="form-group">
@@ -937,10 +953,6 @@ VIEWS.add = (root)=>{
       </div>
       <div class="btn-row" style="margin-bottom:16px">
         <div class="form-group" style="flex:1;margin:0">
-          <label>ผู้รับผิดชอบ</label>
-          <select class="input" id="f-assignee"><option value="">— ไม่ระบุ —</option>${staff.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select>
-        </div>
-        <div class="form-group" style="flex:1;margin:0">
           <label>วันครบกำหนด</label>
           <input class="input" id="f-due" type="date" value="${isoIn(3)}">
         </div>
@@ -949,7 +961,7 @@ VIEWS.add = (root)=>{
         <label>รูป Before (จุดที่ต้องแก้)</label>
         <div class="photo-pick" id="pick-before">
           <div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่ายรูป / เลือกรูป</b><span>แตะเพื่อเปิดกล้องหรือคลังภาพ</span></div>
-          <input type="file" accept="image/*" capture="environment" id="file-before">
+          <input type="file" accept="image/*" id="file-before">
         </div>
       </div>
       <button class="btn btn-fill" id="submitOpen">
@@ -961,7 +973,7 @@ VIEWS.add = (root)=>{
   fin.addEventListener('change',async e=>{
     const f=e.target.files[0]; if(!f) return;
     try{ const blob=await compressImage(f); pendBefore=blob;
-      pick.classList.add('has'); pick.innerHTML=`<img src="${URL.createObjectURL(blob)}"><button class="photo-clear" type="button" id="clrB">✕</button><input type="file" accept="image/*" capture="environment" id="file-before">`;
+      pick.classList.add('has'); pick.innerHTML=`<img src="${URL.createObjectURL(blob)}"><button class="photo-clear" type="button" id="clrB">✕</button><input type="file" accept="image/*" id="file-before">`;
       pick.querySelector('#file-before').addEventListener('change',ev=>fin.dispatchEvent(new Event('change')));
       $('#clrB',pick).onclick=(ev)=>{ev.stopPropagation();VIEWS.add(root);};
     }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); }
@@ -973,7 +985,7 @@ VIEWS.add = (root)=>{
     const btn=$('#submitOpen',root); btn.disabled=true; btn.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังบันทึก...';
     try{
       const t=await DATA.createTask({ category:$('#f-cat',root).value, area,
-        detail:$('#f-detail',root).value.trim(), assigneeId:$('#f-assignee',root).value,
+        detail:$('#f-detail',root).value.trim(), assigneeId:'',
         dueDate:$('#f-due',root).value }, pendBefore);
       toast('เปิดงาน '+(t&&t.code?t.code:'')+' สำเร็จ','ok'); go('tasks');
     }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err');
@@ -999,20 +1011,24 @@ async function openTask(id){
       <figure class="cb">${beforeU?`<img src="${beforeU}">`:`<div class="ph">ยังไม่มีรูป<br>Before</div>`}<figcaption>BEFORE</figcaption></figure>
       <figure class="ca">${afterU?`<img src="${afterU}">`:`<div class="ph">ยังไม่มีรูป<br>After</div>`}<figcaption>AFTER</figcaption></figure>
     </div>
+    <div class="btn-row" style="margin-bottom:14px">
+      <label class="btn btn-ghost" style="flex:1;cursor:pointer">📷 ${beforeU?'เปลี่ยน':'เพิ่ม'} Before<input type="file" accept="image/*" id="editBefore" hidden></label>
+      <label class="btn btn-ghost" style="flex:1;cursor:pointer">📷 ${afterU?'เปลี่ยน':'เพิ่ม'} After<input type="file" accept="image/*" id="editAfter" hidden></label>
+    </div>
     ${compU?`<div style="margin-bottom:14px"><div class="meta-item" style="padding:0;overflow:hidden"><img src="${compU}" style="width:100%;display:block"></div>
       <button class="btn btn-soft" id="dlCompare" style="margin-top:8px;width:100%">⬇️ ดาวน์โหลดรูปเปรียบเทียบ</button></div>`:''}
     ${t.detail?`<div class="meta-item" style="margin-bottom:14px"><div class="k">รายละเอียด</div><div class="v" style="font-weight:600;font-size:14px">${esc(t.detail)}</div></div>`:''}
     <div class="meta-grid">
       <div class="meta-item"><div class="k">หมวดหมู่</div><div class="v">${cat?esc(cat.name):'-'}</div></div>
-      <div class="meta-item"><div class="k">ผู้รับผิดชอบ</div><div class="v">${a?esc(a.name):'-'}</div></div>
+      <div class="meta-item"><div class="k">ผู้ส่งเรื่อง</div><div class="v">${opener?esc(opener.name):'-'}</div></div>
       <div class="meta-item"><div class="k">ครบกำหนด</div><div class="v" style="${ov?'color:var(--red)':''}">${fmtDate(t.dueDate)}${ov?' (เกิน)':''}</div></div>
-      <div class="meta-item"><div class="k">เปิดโดย</div><div class="v">${opener?esc(opener.name.split(' ')[0]):'-'}</div></div>
+      <div class="meta-item"><div class="k">${isClosed?'ปิดโดย':'สร้างเมื่อ'}</div><div class="v">${isClosed?(userById(t.closedBy)?esc(userById(t.closedBy).name.split(' ')[0]):'-'):fmtDate(t.createdAt)}</div></div>
     </div>
 
     ${canSubmit?`<div class="form-group">
       <label>${t.after?'อัปเดต':'เพิ่ม'}รูป After (หลังแก้ไข)</label>
       <div class="photo-pick ${afterU?'has':''}" id="pickAfter">${afterU?`<img src="${afterU}">`:`<div class="ph"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่าย/เลือกรูป After</b></div>`}
-        <input type="file" accept="image/*" capture="environment" id="fileAfter"></div>
+        <input type="file" accept="image/*" id="fileAfter"></div>
       <button class="btn btn-green" id="btnSubmit" style="margin-top:12px" ${t.after?'':'disabled'}>✓ บันทึกว่าแก้ไขเสร็จ</button>
     </div>`:''}
 
@@ -1041,6 +1057,14 @@ async function openTask(id){
   // download compare
   const dl=$('#dlCompare'); if(dl) dl.onclick=async()=>{ const b=await IMG.getBlob(t.compare); if(!b)return;
     const u=URL.createObjectURL(b); const a2=document.createElement('a'); a2.href=u; a2.download=t.code+'_compare.jpg'; a2.click(); URL.revokeObjectURL(u); };
+
+  // เปลี่ยน/เพิ่มรูป Before & After
+  const wirePhoto=(inputId,which)=>{ const inp=$('#'+inputId); if(!inp) return;
+    inp.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f) return;
+      toast('กำลังบันทึกรูป...','info');
+      try{ const blob=await compressImage(f); await DATA.setPhoto(t,which,blob); openTask(id); toast('อัปเดตรูปแล้ว','ok'); }
+      catch(err){ toast('บันทึกรูปไม่สำเร็จ: '+err.message,'err'); } }); };
+  wirePhoto('editBefore','before'); wirePhoto('editAfter','after');
 
   // submit After
   if(canSubmit){
@@ -1130,7 +1154,7 @@ VIEWS.report = (root)=>{
           <select class="input" id="r-status"><option value="all">ทั้งหมด</option><option value="open">รอแก้ไข</option><option value="closed">เสร็จแล้ว</option><option value="overdue">เกินกำหนด</option></select></div>
       </div>
       <div class="btn-row" style="margin-bottom:12px">
-        <div class="form-group" style="flex:1;margin:0"><label>ผู้รับผิดชอบ</label>
+        <div class="form-group" style="flex:1;margin:0"><label>ผู้ส่งเรื่อง</label>
           <select class="input" id="r-assignee"><option value="all">ทั้งหมด</option>${S.users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select></div>
       </div>
       <div class="btn-row">
@@ -1160,7 +1184,7 @@ VIEWS.report = (root)=>{
     const f=REP_FILTER;
     if(f.cat!=='all') arr=arr.filter(t=>t.category===f.cat);
     if(f.status==='overdue') arr=arr.filter(isOverdue); else if(f.status!=='all') arr=arr.filter(t=>t.status===f.status);
-    if(f.assignee!=='all') arr=arr.filter(t=>t.assigneeId===f.assignee);
+    if(f.assignee!=='all') arr=arr.filter(t=>t.createdBy===f.assignee);
     if(f.from) arr=arr.filter(t=>(t.createdAt||'').slice(0,10)>=f.from);
     if(f.to) arr=arr.filter(t=>(t.createdAt||'').slice(0,10)<=f.to);
     return arr;
@@ -1214,19 +1238,18 @@ function desktopTable(arr){
       <td class="wrap">${esc(t.area)}</td>
       <td>${cat?esc(cat.name):'-'}</td>
       <td><span class="badge ${stBadge(t.status)}">${stName(t.status)}</span></td>
-      <td>${a?esc(a.name):'-'}</td>
       <td style="${isOverdue(t)?'color:var(--red);font-weight:700':''}">${fmtDate(t.dueDate)}</td>
       <td>${o?esc(o.name.split(' ')[0]):'-'}<br><span style="color:var(--text-3);font-size:11px">${fmtDate(t.createdAt)}</span></td>
       <td>${cl?esc(cl.name.split(' ')[0]):'-'}<br><span style="color:var(--text-3);font-size:11px">${t.closedAt?fmtDateTime(t.closedAt):'-'}</span></td>
     </tr>`; }).join('');
   return `<div class="report-table-wrap"><table class="rt">
-    <thead><tr><th>รหัส</th><th>Before/After</th><th>พื้นที่</th><th>หมวด</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>ครบกำหนด</th><th>เปิดงาน</th><th>ปิดงาน</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-3)">ไม่มีข้อมูล</td></tr>'}</tbody></table></div>`;
+    <thead><tr><th>รหัส</th><th>Before/After</th><th>พื้นที่</th><th>หมวด</th><th>สถานะ</th><th>ครบกำหนด</th><th>ผู้ส่งเรื่อง</th><th>ปิดงาน</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-3)">ไม่มีข้อมูล</td></tr>'}</tbody></table></div>`;
 }
 function exportCsv(arr){
-  const head=['Code','Area','Detail','Category','Status','Assignee','DueDate','OpenedBy','OpenedAt','ClosedBy','ClosedAt'];
-  const rows=arr.map(t=>{ const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
-    return [t.code,t.area,t.detail,cat?cat.name:'',stName(t.status),a?a.name:'',t.dueDate||'',o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']
+  const head=['Code','Area','Detail','Category','Status','DueDate','SubmittedBy','OpenedAt','ClosedBy','ClosedAt'];
+  const rows=arr.map(t=>{ const cat=catById(t.category),o=userById(t.createdBy),cl=userById(t.closedBy);
+    return [t.code,t.area,t.detail,cat?cat.name:'',stName(t.status),t.dueDate||'',o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']
       .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','); });
   const csv='﻿'+head.join(',')+'\n'+rows.join('\n');
   downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'ba-report-'+todayISO()+'.csv');
@@ -1247,11 +1270,11 @@ async function api(path,opts={}){
 
 /* ---------- รายงานรวม (สรุปงานของ array) ---------- */
 function reportRows(arr){
-  return arr.map(t=>{ const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
-    return [t.code,t.area,t.detail||'',cat?cat.name:'',stName(t.status),a?a.name:'',t.dueDate||'',
+  return arr.map(t=>{ const cat=catById(t.category),o=userById(t.createdBy),cl=userById(t.closedBy);
+    return [t.code,t.area,t.detail||'',cat?cat.name:'',stName(t.status),t.dueDate||'',
       o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']; });
 }
-const REPORT_HEAD=['รหัส','พื้นที่','รายละเอียด','หมวด','สถานะ','ผู้รับผิดชอบ','ครบกำหนด','เปิดโดย','เปิดเมื่อ','ปิดโดย','ปิดเมื่อ'];
+const REPORT_HEAD=['รหัส','พื้นที่','รายละเอียด','หมวด','สถานะ','ครบกำหนด','ผู้ส่งเรื่อง','ส่งเมื่อ','ปิดโดย','ปิดเมื่อ'];
 
 /* ---------- Excel .xlsx (self-contained, ไม่ใช้ไลบรารี) ---------- */
 function crc32(b){ let c; if(!crc32.t){ crc32.t=new Uint32Array(256);
@@ -1297,13 +1320,13 @@ async function printReport(arr){
   const open=arr.filter(x=>x.status==='open').length,
     closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
   const rowsHtml=await Promise.all(arr.map(async(t,i)=>{
-    const cat=catById(t.category),a=userById(t.assigneeId),o=userById(t.createdBy),cl=userById(t.closedBy);
+    const cat=catById(t.category),o=userById(t.createdBy),cl=userById(t.closedBy);
     const b=await IMG.url(t.before), af=await IMG.url(t.after);
     return `<tr>
       <td>${i+1}</td><td><b>${t.code}</b></td>
       <td>${b?`<img src="${b}">`:'—'} ${af?`<img src="${af}">`:'—'}</td>
       <td>${esc(t.area)}</td><td>${cat?esc(cat.name):'-'}</td><td>${stName(t.status)}${isOverdue(t)?' (เกิน)':''}</td>
-      <td>${a?esc(a.name):'-'}</td><td>${fmtDate(t.dueDate)}</td>
+      <td>${fmtDate(t.dueDate)}</td>
       <td>${o?esc(o.name.split(' ')[0]):'-'}<br><small>${fmtDate(t.createdAt)}</small></td>
       <td>${cl?esc(cl.name.split(' ')[0]):'-'}<br><small>${t.closedAt?fmtDate(t.closedAt):'-'}</small></td>
     </tr>`; }));
@@ -1317,8 +1340,8 @@ async function printReport(arr){
       </div>
     </div>
     <table class="pr-table"><thead><tr>
-      <th>#</th><th>รหัส</th><th>Before / After</th><th>พื้นที่</th><th>หมวด</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>ครบกำหนด</th><th>เปิดงาน</th><th>ปิดงาน</th>
-    </tr></thead><tbody>${rowsHtml.join('')||'<tr><td colspan="10" style="text-align:center;padding:20px">ไม่มีข้อมูล</td></tr>'}</tbody></table>`;
+      <th>#</th><th>รหัส</th><th>Before / After</th><th>พื้นที่</th><th>หมวด</th><th>สถานะ</th><th>ครบกำหนด</th><th>ผู้ส่งเรื่อง</th><th>ปิดงาน</th>
+    </tr></thead><tbody>${rowsHtml.join('')||'<tr><td colspan="9" style="text-align:center;padding:20px">ไม่มีข้อมูล</td></tr>'}</tbody></table>`;
   // รอรูปโหลดก่อนพิมพ์
   const imgs=[...area.querySelectorAll('img')];
   await Promise.all(imgs.map(im=> im.complete?Promise.resolve():new Promise(r=>{im.onload=im.onerror=r;})));
@@ -1336,10 +1359,6 @@ async function sendLine(taskId){
 /* ---------- Settings ---------- */
 VIEWS.settings = (root)=>{
   root.innerHTML=`
-    <div class="section-title">พนักงาน (whitelist)</div>
-    <div class="card"><div id="userList"></div>
-      <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div></div>
-
     <div class="section-title">หมวดหมู่</div>
     <div class="card"><div id="catList"></div>
       <div style="padding:12px"><button class="btn btn-soft" id="addCat" style="width:100%">+ เพิ่มหมวดหมู่</button></div></div>
@@ -1364,14 +1383,43 @@ VIEWS.settings = (root)=>{
       <div class="lrow"><div class="li-main"><b>รีเซ็ตข้อมูลตัวอย่าง</b><span>ล้างข้อมูล demo ทั้งหมด</span></div>
         <button class="btn btn-ghost" id="resetDemo" style="padding:8px 14px">รีเซ็ต</button></div>
     </div>
+
+    <div class="section-title">พนักงาน (whitelist)</div>
+    <div class="card">
+      <button type="button" class="lrow" id="empToggle" style="width:100%;background:none;text-align:left;border-radius:18px 18px 0 0">
+        <div style="width:38px;height:38px;border-radius:11px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="li-main"><b>รายชื่อพนักงาน</b><span id="empCount">${S.users.length} คน · แตะเพื่อดู/ค้นหา</span></div>
+        <svg id="empChev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2.4" stroke-linecap="round" style="transition:transform .25s"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="empPanel" style="display:none;border-top:1px solid var(--border)">
+        <div style="padding:12px 12px 6px"><div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+          <input id="empSearch" placeholder="ค้นหาชื่อ / รหัสพนักงาน"></div></div>
+        <div id="userList" style="max-height:340px;overflow:auto"></div>
+        <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div>
+      </div>
+    </div>
     <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo mode (เก็บข้อมูลในเครื่อง)':'Online'}</div>
   `;
-  // users
+  // users (collapsible + search)
   const ul=$('#userList',root);
-  S.users.forEach(u=> ul.appendChild(el(`<div class="lrow"><div class="li-main"><b>${esc(u.name)}</b><span>รหัส ${esc(u.code)}</span></div>
-    <button class="sw-mini" data-edit="${u.id}">✎</button></div>`)) );
-  ul.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editUser(b.dataset.edit));
+  function renderUsers(q=''){
+    q=q.trim().toLowerCase();
+    const list=S.users.filter(u=>!q || (u.name+' '+u.code).toLowerCase().includes(q));
+    ul.innerHTML='';
+    if(!list.length){ ul.appendChild(el(`<div style="padding:18px;text-align:center;color:var(--text-3);font-size:13px">ไม่พบพนักงาน</div>`)); return; }
+    list.forEach(u=>{ const row=el(`<div class="lrow"><div class="li-main"><b>${esc(u.name)}</b><span>รหัส ${esc(u.code)}</span></div>
+      <button class="sw-mini">✎</button></div>`);
+      row.querySelector('.sw-mini').onclick=()=>editUser(u.id); ul.appendChild(row); });
+  }
+  renderUsers();
+  $('#empSearch',root).addEventListener('input',e=>renderUsers(e.target.value));
   $('#addUser',root).onclick=()=>editUser(null);
+  const panel=$('#empPanel',root), chev=$('#empChev',root);
+  $('#empToggle',root).onclick=()=>{ const open=panel.style.display!=='none';
+    panel.style.display=open?'none':'block'; chev.style.transform=open?'':'rotate(180deg)';
+    if(!open) setTimeout(()=>$('#empSearch',root).focus(),50); };
   // categories
   const cl=$('#catList',root);
   S.categories.forEach(c=> cl.appendChild(el(`<div class="lrow"><span class="dot-color" style="background:${c.color}"></span>
@@ -1441,14 +1489,11 @@ function editTaskForm(id){
     <div class="form-group"><label>หมวดหมู่</label><select class="input" id="e-cat">${S.categories.map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
     <div class="form-group"><label>พื้นที่ / ชื่อรายการงาน</label><input class="input" id="e-area" value="${esc(t.area)}"></div>
     <div class="form-group"><label>รายละเอียด</label><textarea class="input" id="e-detail">${esc(t.detail||'')}</textarea></div>
-    <div class="btn-row">
-      <div class="form-group" style="flex:1;margin:0"><label>ผู้รับผิดชอบ</label><select class="input" id="e-assignee"><option value="">— ไม่ระบุ —</option>${S.users.map(u=>`<option value="${u.id}" ${u.id===t.assigneeId?'selected':''}>${esc(u.name)}</option>`).join('')}</select></div>
-      <div class="form-group" style="flex:1;margin:0"><label>ครบกำหนด</label><input class="input" type="date" id="e-due" value="${t.dueDate||''}"></div>
-    </div>
+    <div class="form-group"><label>วันครบกำหนด</label><input class="input" type="date" id="e-due" value="${t.dueDate||''}"></div>
     <button class="btn btn-fill" id="saveEdit" style="width:100%">บันทึก</button>`);
   $('#saveEdit').onclick=async()=>{ const area=$('#e-area').value.trim(); if(!area){ toast('กรอกพื้นที่/ชื่องาน','err'); return; }
     try{ await DATA.editTask(t,{ category:$('#e-cat').value, area, detail:$('#e-detail').value.trim(),
-        assigneeId:$('#e-assignee').value, dueDate:$('#e-due').value });
+        dueDate:$('#e-due').value });
       toast('บันทึกแล้ว','ok'); openTask(id); }
     catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
 }
