@@ -491,11 +491,6 @@ body.desktop-report .view{max-width:1180px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="nlabel">เปิดงาน</span>
   </button>
-  <button class="nav-btn" data-route="report" title="รายงาน" aria-label="รายงาน">
-    <span class="pillbg"></span>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-    <span class="nlabel">รายงาน</span>
-  </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
     <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
@@ -791,8 +786,8 @@ function closeModal(){ modalBack.classList.remove('show'); document.body.style.o
 modalBack.addEventListener('click',e=>{ if(e.target===modalBack) closeModal(); });
 
 /* ======================= ROUTER ======================= */
-const ROUTES = ['dashboard','add','report','settings'];
-const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',report:'รายงาน',settings:'ตั้งค่า'};
+const ROUTES = ['dashboard','add','settings'];
+const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',settings:'ตั้งค่า'};
 let current='dashboard';
 
 function go(route){
@@ -874,7 +869,25 @@ VIEWS.dashboard = (root)=>{
     </div>
     <div class="section-title" id="cfTitle" style="margin:18px 4px 2px"></div>
     <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack"></div></div>
-    <div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดเพื่อดู/แก้ไขรายละเอียด · ปัดเพื่อเลื่อน</div>`;
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดเพื่อดู/แก้ไขรายละเอียด · ปัดเพื่อเลื่อน</div>
+
+    <div class="section-title" style="margin:22px 4px 8px">สรุป &amp; ส่งออก</div>
+    <div class="card">
+      <button type="button" class="lrow" id="sumToggle" style="width:100%;background:none;text-align:left;border-radius:18px">
+        <div style="width:38px;height:38px;border-radius:11px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg></div>
+        <div class="li-main"><b>สรุปตามหมวดหมู่ &amp; ส่งออก</b><span>กราฟตามหมวด · Excel · PDF · LINE</span></div>
+        <svg id="sumChev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2.4" stroke-linecap="round" style="transition:transform .25s"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="sumPanel" style="display:none;border-top:1px solid var(--border);padding:14px">
+        <div id="sumBars"></div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-ghost" id="dExcel">⬇ Excel</button>
+          <button class="btn btn-ghost" id="dPdf">🖨 PDF</button>
+          <button class="btn btn-ghost" id="dLine" style="color:#06c755;border-color:#06c75566">📨 LINE</button>
+        </div>
+      </div>
+    </div>`;
   const statEls=$$('#statFilters .stat',root);
   const cfTitle=$('#cfTitle',root), cf=$('#coverflow',root), track=$('#cfTrack',root);
   const LBL={open:'รอแก้ไข',closed:'เสร็จแล้ว',overdue:'เกินกำหนด',all:'ทั้งหมด'};
@@ -886,21 +899,36 @@ VIEWS.dashboard = (root)=>{
       const rot=c*-42, sc=1-Math.min(0.36,Math.abs(c)*0.36), tz=-Math.abs(c)*150, op=1-Math.min(0.62,Math.abs(c)*0.62);
       card.style.transform=`translateZ(${tz}px) rotateY(${rot}deg) scale(${sc})`;
       card.style.opacity=op.toFixed(3); card.style.zIndex=String(200-Math.round(Math.abs(c)*100)); }); };
-  function render(){
+  const getFiltered=()=>{
     let arr=t.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     if(DASH.status==='overdue') arr=arr.filter(isOverdue);
     else if(DASH.status!=='all') arr=arr.filter(x=>x.status===DASH.status);
     if(DASH.q){ const q=DASH.q.toLowerCase(); arr=arr.filter(x=>(x.code+' '+x.area+' '+(x.detail||'')).toLowerCase().includes(q)); }
+    return arr;
+  };
+  function renderSummary(arr){ const sb=$('#sumBars',root); if(!sb) return;
+    const byCat=S.categories.map(c=>({c,n:arr.filter(x=>x.category===c.id).length}));
+    const maxc=Math.max(1,...byCat.map(x=>x.n));
+    sb.innerHTML=byCat.map(({c,n})=>`<div class="cat-row"><span class="nm">${esc(c.name)}</span><div class="bar"><i style="width:${n/maxc*100}%;background:${c.color}"></i></div><span class="ct">${n}</span></div>`).join('')||'<div style="color:var(--text-3);font-size:13px">—</div>';
+  }
+  function render(){
+    const arr=getFiltered();
     cfTitle.textContent=`${LBL[DASH.status]||''} (${arr.length})`;
-    if(!arr.length){ track.style.padding='0'; track.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; return; }
-    track.innerHTML=arr.map(cfCard).join(''); pad(); hydrateAll(track);
-    cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420);
+    if(!arr.length){ track.style.padding='0'; track.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; }
+    else { track.innerHTML=arr.map(cfCard).join(''); pad(); hydrateAll(track);
+      cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420); }
+    renderSummary(arr);
   }
   cf.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
   window.addEventListener('resize',()=>{ pad(); upd(); });
   track.addEventListener('click',e=>{ const c=e.target.closest('.cf-card'); if(c) openTask(c.dataset.id); });
   statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
   $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
+  const sp=$('#sumPanel',root), sc=$('#sumChev',root);
+  $('#sumToggle',root).onclick=()=>{ const open=sp.style.display!=='none'; sp.style.display=open?'none':'block'; sc.style.transform=open?'':'rotate(180deg)'; };
+  $('#dExcel',root).onclick=()=>exportXlsx(getFiltered());
+  $('#dPdf',root).onclick=()=>printReport(getFiltered());
+  $('#dLine',root).onclick=()=>sendReportLine(getFiltered());
   applyActive(); render();
 };
 function cfCard(t){
