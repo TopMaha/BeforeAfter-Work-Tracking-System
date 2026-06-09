@@ -1638,8 +1638,12 @@ applyTheme(S.theme||'light');
 })();
 
 /* service worker */
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>{
-  navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  // อัปเดตอัตโนมัติเมื่อมีเวอร์ชันใหม่ (โหลดซ้ำให้เอง ครั้งเดียว)
+  let _reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(_reloaded)return; _reloaded=true; location.reload(); });
+}
 </script>
 </body>
 </html>
