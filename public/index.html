@@ -325,7 +325,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .coverflow::-webkit-scrollbar{display:none}
 .cf-track{display:flex;align-items:center;width:max-content;
   padding:0 calc(50vw - 122px);transform-style:preserve-3d}
-.cf-card{flex:0 0 224px;width:224px;margin:0 -8px;scroll-snap-align:center;cursor:pointer;
+.cf-card{flex:0 0 224px;width:224px;margin:0 -8px;scroll-snap-align:center;cursor:pointer;touch-action:manipulation;
   transform-style:preserve-3d;will-change:transform,opacity}
 .cf-img{position:relative;border-radius:18px;overflow:hidden;background:var(--surface-3);border:1px solid var(--border);
   box-shadow:0 18px 40px rgba(15,40,90,.28);aspect-ratio:4/3}
@@ -779,13 +779,15 @@ function toast(msg,kind='info'){
 
 /* ======================= MODAL ======================= */
 const modalBack=$('#modalBack'), modalEl=$('#modal');
+let _modalOpenedAt=0;
 function openModal(html){
   modalEl.innerHTML='<div class="modal-head"><div class="modal-grab"></div><button type="button" class="modal-x" aria-label="ปิด">✕</button></div>'+html;
   const x=modalEl.querySelector('.modal-x'); if(x) x.onclick=closeModal;
-  modalEl.scrollTop=0;
+  modalEl.scrollTop=0; _modalOpenedAt=Date.now();
   modalBack.classList.add('show'); document.body.style.overflow='hidden'; }
 function closeModal(){ modalBack.classList.remove('show'); document.body.style.overflow=''; }
-modalBack.addEventListener('click',e=>{ if(e.target===modalBack) closeModal(); });
+// กัน "ghost click" หลังเปิด (แตะบนมือถือแล้ว click หลอกตามมาโดนพื้นหลัง → ปิดเอง)
+modalBack.addEventListener('click',e=>{ if(e.target===modalBack && Date.now()-_modalOpenedAt>350) closeModal(); });
 
 /* ======================= ROUTER ======================= */
 const ROUTES = ['dashboard','add','settings'];
@@ -806,16 +808,20 @@ function markNav(route){
   $$('[data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
 }
 $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
-/* ปัดซ้าย/ขวา เพื่อสลับเมนู (ไม่ต้องกดแถบ) */
+/* ปัดซ้าย/ขวา เพื่อสลับเมนู (ไม่ต้องกดแถบ) — coverflow เลื่อนได้ พอสุดขอบแล้วปัดต่อ = เปลี่ยนหน้า */
 (function swipeNav(){
-  const ORDER=['dashboard','add','settings']; let sx=0,sy=0,st=0,ok=false;
+  const ORDER=['dashboard','add','settings']; let sx=0,sy=0,st=0,ok=false,cfEl=null;
   const app=$('#app');
   app.addEventListener('touchstart',e=>{
-    if(modalBack.classList.contains('show')||e.target.closest('.coverflow')||e.target.closest('input,textarea,select')){ ok=false; return; }
+    if(modalBack.classList.contains('show')||e.target.closest('input,textarea,select')){ ok=false; return; }
+    cfEl=e.target.closest('.coverflow');
     const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true; },{passive:true});
   app.addEventListener('touchend',e=>{ if(!ok)return; ok=false;
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-    if(Date.now()-st>600 || Math.abs(dx)<70 || Math.abs(dx)<Math.abs(dy)*1.6) return;
+    if(Date.now()-st>700 || Math.abs(dx)<55 || Math.abs(dx)<Math.abs(dy)*1.4) return;
+    if(cfEl){ // ปัดในโซน coverflow → เปลี่ยนหน้าเฉพาะตอนเลื่อนสุดขอบแล้ว
+      const atLeft=cfEl.scrollLeft<=4, atRight=cfEl.scrollLeft+cfEl.clientWidth>=cfEl.scrollWidth-4;
+      if(dx<0 && !atRight) return; if(dx>0 && !atLeft) return; }
     const i=ORDER.indexOf(current);
     if(dx<0 && i<ORDER.length-1) go(ORDER[i+1]);
     else if(dx>0 && i>0) go(ORDER[i-1]); },{passive:true});
@@ -942,7 +948,7 @@ VIEWS.dashboard = (root)=>{
   let tx=0,ty=0,moved=false;
   cf.addEventListener('touchstart',e=>{ const t2=e.touches[0]; tx=t2.clientX; ty=t2.clientY; moved=false; },{passive:true});
   cf.addEventListener('touchmove',e=>{ const t2=e.touches[0]; if(Math.abs(t2.clientX-tx)>10||Math.abs(t2.clientY-ty)>10) moved=true; },{passive:true});
-  cf.addEventListener('touchend',()=>{ if(moved)return; const elx=document.elementFromPoint(tx,ty); openCard(elx&&elx.closest('.cf-card')); });
+  cf.addEventListener('touchend',(e)=>{ if(moved)return; const elx=document.elementFromPoint(tx,ty); const c=elx&&elx.closest('.cf-card'); if(c){ e.preventDefault(); openCard(c); } });
   track.addEventListener('click',e=>{ openCard(e.target.closest('.cf-card')); });
   statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
   $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
