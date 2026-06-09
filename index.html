@@ -516,6 +516,7 @@ const CONFIG = {
   API_BASE: "",            // เช่น "https://ba-track.yourname.workers.dev"
   APP_NAME: "Before/After Work Tracking"
 };
+const APP_VER = "v17";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -1517,7 +1518,8 @@ VIEWS.settings = (root)=>{
         <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div>
       </div>
     </div>
-    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo mode (เก็บข้อมูลในเครื่อง)':'Online'}</div>
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>
+    <button class="btn btn-ghost" id="forceUpdate" style="width:100%;margin-bottom:8px">🔄 บังคับอัปเดตแอป (ล้างแคช)</button>
   `;
   // users (collapsible + search)
   const ul=$('#userList',root);
@@ -1564,6 +1566,10 @@ VIEWS.settings = (root)=>{
   $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
   $('#resetDemo',root).onclick=()=>{ if(confirm('รีเซ็ตข้อมูล demo ทั้งหมด?')){ localStorage.removeItem(KEY);
     indexedDB.deleteDatabase('ba-images'); location.reload(); } };
+  $('#forceUpdate',root).onclick=async()=>{ toast('กำลังอัปเดต...','info');
+    try{ const rs=await navigator.serviceWorker.getRegistrations(); for(const r of rs) await r.unregister(); }catch(e){}
+    try{ const ks=await caches.keys(); for(const k of ks) await caches.delete(k); }catch(e){}
+    location.href=location.pathname+'?u='+Date.now(); };
 };
 function editUser(id){
   const u=id?userById(id):{id:null,code:'',name:'',role:'staff',lineUserId:''};
