@@ -315,14 +315,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nav-btn.active .pillbg{opacity:1;transform:scale(1)}
 .nav-btn.active .nlabel{max-width:96px;opacity:1;margin-left:8px}
 .nav-btn:active{transform:scale(.93)}
-/* Floating Add button (FAB) */
-.fab{position:fixed;right:18px;z-index:41;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);
-  width:56px;height:56px;border-radius:18px;display:none;place-items:center;color:#fff;
-  background:linear-gradient(135deg,var(--blue-400),var(--blue-700));box-shadow:0 14px 30px rgba(37,99,235,.5);
-  transition:transform .2s var(--ease),box-shadow .2s}
-.fab svg{width:30px;height:30px;stroke-width:2.6}
-.fab:active{transform:scale(.88) rotate(90deg)}
-.fab.active{box-shadow:0 0 0 4px var(--primary-soft),0 14px 30px rgba(37,99,235,.55)}
+/* "เปิดงาน" tab — accent ให้เด่นกว่าตัวอื่น */
+.nav-cta:not(.active){color:var(--primary)}
+.nav-cta:not(.active) svg{background:var(--primary-soft);border-radius:10px;padding:3px;box-sizing:content-box;width:20px;height:20px}
 
 /* ============================ 3D COVERFLOW (dashboard) ============================ */
 .coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
@@ -340,6 +335,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .cf-cap{margin-top:8px;text-align:center;padding:0 8px}
 .cf-cap b{font-size:12px;color:var(--primary)}
 .cf-cap span{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cf-empty{flex:0 0 100%;text-align:center;color:var(--text-3);font-weight:700;padding:46px 16px}
 
 /* ============================ MODAL ============================ */
 .modal-back{position:fixed;inset:0;z-index:70;background:rgba(8,15,30,.55);backdrop-filter:blur(4px);
@@ -490,6 +486,11 @@ body.desktop-report .view{max-width:1180px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
     <span class="nlabel">หน้าหลัก</span>
   </button>
+  <button class="nav-btn nav-cta" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
+    <span class="pillbg"></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <span class="nlabel">เปิดงาน</span>
+  </button>
   <button class="nav-btn" data-route="report" title="รายงาน" aria-label="รายงาน">
     <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -501,9 +502,6 @@ body.desktop-report .view{max-width:1180px}
     <span class="nlabel">ตั้งค่า</span>
   </button>
 </nav>
-<button class="fab" id="fab" title="เปิดงานใหม่" aria-label="เปิดงานใหม่" style="display:none" data-route="add">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-</button>
 
 <!-- modal + toasts -->
 <div class="modal-back" id="modalBack"><div class="modal" id="modal"></div></div>
@@ -811,7 +809,6 @@ function markNav(route){
   $$('[data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
 }
 $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
-$('#fab').addEventListener('click',()=>go('add'));
 
 /* ======================= AUTH ======================= */
 async function login(code){
@@ -832,7 +829,6 @@ function enterApp(){
   $('#app').classList.add('show');
   $('#nav').style.display='flex';
   $('#meBtn').textContent = ME.name.trim().charAt(0);
-  $('#fab').style.display='grid';
   go('dashboard');
   notifyDue();
 }
@@ -860,15 +856,11 @@ VIEWS.dashboard = (root)=>{
   const t=S.tasks;
   const counts={ open:t.filter(x=>x.status==='open').length, closed:t.filter(x=>x.status==='closed').length,
     overdue:t.filter(isOverdue).length, all:t.length };
-  const recent=t.filter(x=>x.before||x.after||x.compare)
-    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,8);
   root.innerHTML=`
     <div style="margin:2px 4px 4px">
       <div style="font-size:14px;color:var(--text-2);font-weight:600">สวัสดี 👋</div>
       <div style="font-size:22px;font-weight:800">${esc(ME.name)}</div>
     </div>
-    ${recent.length?`<div class="section-title" style="margin:18px 4px 4px">ภาพรวมงานล่าสุด</div>
-      <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack">${recent.map(cfCard).join('')}</div></div>`:''}
     <div class="section-title" style="margin:16px 4px 8px">แตะการ์ดเพื่อกรองงาน</div>
     <div class="stat-grid" id="statFilters">
       ${statCard('s-open',counts.open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/>','open')}
@@ -880,27 +872,36 @@ VIEWS.dashboard = (root)=>{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
       <input id="dq" placeholder="ค้นหา รหัส / พื้นที่ / รายละเอียด" value="${esc(DASH.q)}">
     </div>
-    <div class="section-title" id="dlistTitle" style="margin:16px 4px 10px"></div>
-    <div id="dlist"></div>`;
+    <div class="section-title" id="cfTitle" style="margin:18px 4px 2px"></div>
+    <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack"></div></div>
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดเพื่อดู/แก้ไขรายละเอียด · ปัดเพื่อเลื่อน</div>`;
   const statEls=$$('#statFilters .stat',root);
-  const titleEl=$('#dlistTitle',root);
+  const cfTitle=$('#cfTitle',root), cf=$('#coverflow',root), track=$('#cfTrack',root);
   const LBL={open:'รอแก้ไข',closed:'เสร็จแล้ว',overdue:'เกินกำหนด',all:'ทั้งหมด'};
   const applyActive=()=>statEls.forEach(s=>s.classList.toggle('stat-active',s.dataset.filter===DASH.status));
-  function renderList(){
+  const pad=()=>{ const p=Math.max(12,(cf.clientWidth-224)/2); track.style.paddingLeft=p+'px'; track.style.paddingRight=p+'px'; };
+  const upd=()=>{ const center=cf.scrollLeft+cf.clientWidth/2;
+    [...track.children].forEach(card=>{ if(!card.classList.contains('cf-card'))return;
+      const cc=card.offsetLeft+card.offsetWidth/2, c=Math.max(-1.3,Math.min(1.3,(cc-center)/cf.clientWidth));
+      const rot=c*-42, sc=1-Math.min(0.36,Math.abs(c)*0.36), tz=-Math.abs(c)*150, op=1-Math.min(0.62,Math.abs(c)*0.62);
+      card.style.transform=`translateZ(${tz}px) rotateY(${rot}deg) scale(${sc})`;
+      card.style.opacity=op.toFixed(3); card.style.zIndex=String(200-Math.round(Math.abs(c)*100)); }); };
+  function render(){
     let arr=t.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     if(DASH.status==='overdue') arr=arr.filter(isOverdue);
     else if(DASH.status!=='all') arr=arr.filter(x=>x.status===DASH.status);
     if(DASH.q){ const q=DASH.q.toLowerCase(); arr=arr.filter(x=>(x.code+' '+x.area+' '+(x.detail||'')).toLowerCase().includes(q)); }
-    titleEl.textContent=`${LBL[DASH.status]||''} (${arr.length})`;
-    const host=$('#dlist',root); host.innerHTML='';
-    if(!arr.length){ host.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><b>ไม่พบงาน</b><div style="font-size:13px">ลองเปลี่ยนตัวกรองหรือคำค้นหา</div></div>`)); return; }
-    arr.forEach(x=>host.appendChild(taskCard(x))); hydrateAll(host);
+    cfTitle.textContent=`${LBL[DASH.status]||''} (${arr.length})`;
+    if(!arr.length){ track.style.padding='0'; track.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; return; }
+    track.innerHTML=arr.map(cfCard).join(''); pad(); hydrateAll(track);
+    cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420);
   }
-  statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); renderList(); });
-  $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; renderList(); });
-  applyActive(); renderList();
-  setupCoverflow(root);
-  hydrateAll(root);
+  cf.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
+  window.addEventListener('resize',()=>{ pad(); upd(); });
+  track.addEventListener('click',e=>{ const c=e.target.closest('.cf-card'); if(c) openTask(c.dataset.id); });
+  statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
+  $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
+  applyActive(); render();
 };
 function cfCard(t){
   const img=t.compare||t.before||t.after;
@@ -910,22 +911,6 @@ function cfCard(t){
       <span class="cf-badge" style="background:${bg}">${stName(t.status)}</span></div>
     <div class="cf-cap"><b>${t.code}</b><span>${esc(t.area)}</span></div>
   </div>`;
-}
-function setupCoverflow(root){
-  const cf=$('#coverflow',root); if(!cf) return;
-  const track=$('#cfTrack',root);
-  const pad=()=>{ const p=Math.max(12,(cf.clientWidth-224)/2); track.style.paddingLeft=p+'px'; track.style.paddingRight=p+'px'; };
-  const upd=()=>{ const center=cf.scrollLeft+cf.clientWidth/2;
-    [...track.children].forEach(card=>{ const cc=card.offsetLeft+card.offsetWidth/2;
-      const c=Math.max(-1.3,Math.min(1.3,(cc-center)/cf.clientWidth));
-      const rot=c*-42, sc=1-Math.min(0.36,Math.abs(c)*0.36), tz=-Math.abs(c)*150, op=1-Math.min(0.62,Math.abs(c)*0.62);
-      card.style.transform=`translateZ(${tz}px) rotateY(${rot}deg) scale(${sc})`;
-      card.style.opacity=op.toFixed(3); card.style.zIndex=String(200-Math.round(Math.abs(c)*100)); }); };
-  pad(); upd();
-  cf.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
-  window.addEventListener('resize',()=>{ pad(); upd(); });
-  track.querySelectorAll('.cf-card').forEach(cd=>cd.addEventListener('click',()=>openTask(cd.dataset.id)));
-  requestAnimationFrame(upd); setTimeout(upd,150); setTimeout(upd,450);
 }
 function statCard(cls,n,l,svg,key){
   return `<div class="stat ${cls}${key?' stat-btn':''}"${key?` data-filter="${key}"`:''}><div class="n">${n}</div><div class="l">${l}</div>
