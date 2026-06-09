@@ -290,40 +290,40 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sw-mini:active{transform:scale(.9)}
 .dot-color{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 
-/* ============================ ANIMATED DOCK NAV ============================ */
+/* ============================ BOTTOM NAV (clean pill) ============================ */
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:40;
-  width:min(440px,calc(100% - 20px));height:62px;
-  background:color-mix(in srgb,var(--surface) 80%,transparent);
-  -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  width:min(430px,calc(100% - 20px));height:64px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
   border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow-lg);
-  display:flex;align-items:flex-end;justify-content:space-around;padding:0 8px 7px;
+  display:flex;align-items:center;justify-content:space-around;padding:0 8px;
 }
 .nav-indicator{display:none}
-.nav-btn{position:relative;flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  padding-bottom:8px;color:var(--text-2);transition:color .25s var(--ease)}
-.nav-btn svg{width:25px;height:25px;stroke-width:2.1;transform-origin:50% 100%;
-  transform:translateY(var(--mlift,0px)) scale(var(--mscale,1));
-  transition:transform .15s var(--ease),color .25s}
-.nav-btn.active{color:var(--primary)}
-.nav-btn.active::after{content:"";position:absolute;bottom:1px;width:5px;height:5px;border-radius:50%;background:var(--primary)}
-.nav-btn:active svg{transform:translateY(var(--mlift,0px)) scale(.82)}
-/* notification badge (สไตล์ dock) */
-.dock-badge{position:absolute;top:3px;left:calc(50% + 4px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;
+.nav-btn{position:relative;flex:1;height:48px;display:flex;align-items:center;justify-content:center;
+  color:var(--text-2);transition:color .3s var(--ease)}
+.nav-btn .pillbg{position:absolute;inset:4px 8px;border-radius:15px;
+  background:linear-gradient(135deg,var(--blue-500),var(--blue-700));box-shadow:0 8px 18px rgba(37,99,235,.4);
+  opacity:0;transform:scale(.55);transition:opacity .32s var(--ease),transform .32s var(--ease)}
+.nav-btn svg{position:relative;z-index:1;width:25px;height:25px;stroke-width:2.1;transition:transform .3s var(--ease)}
+.nav-btn.active{color:#fff}
+.nav-btn.active .pillbg{opacity:1;transform:scale(1)}
+.nav-btn.active svg{transform:scale(1.06)}
+.nav-btn:active svg{transform:scale(.84)}
+/* notification badge */
+.dock-badge{position:absolute;top:2px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;
   background:var(--red);color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;
   box-shadow:0 0 0 2px var(--surface);z-index:3;line-height:1}
 .dock-badge.show{display:flex;animation:pop .3s var(--ease)}
 /* center add */
-.nav-add{flex:0 0 auto;position:relative;display:flex;align-items:flex-end;padding-bottom:6px}
+.nav-add{flex:0 0 auto;position:relative;display:flex;align-items:center}
 .nav-add .plus{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;color:#fff;
   background:linear-gradient(135deg,var(--blue-400),var(--blue-700));
-  box-shadow:0 12px 24px rgba(37,99,235,.55);transform-origin:50% 100%;
-  transform:translateY(calc(-14px + var(--mlift,0px))) scale(var(--mscale,1));
-  transition:transform .15s var(--ease)}
+  box-shadow:0 12px 24px rgba(37,99,235,.5);transform:translateY(-12px);transition:transform .2s var(--ease)}
 .nav-add .plus svg{width:30px;height:30px;stroke-width:2.6}
 .nav-add.active .plus{box-shadow:0 0 0 4px var(--primary-soft),0 12px 24px rgba(37,99,235,.6)}
-.nav-add:active .plus{transform:translateY(calc(-14px + var(--mlift,0px))) scale(.9)}
+.nav-add:active .plus{transform:translateY(-12px) scale(.9)}
 
 /* ============================ 3D COVERFLOW (dashboard) ============================ */
 .coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
@@ -488,9 +488,11 @@ body.desktop-report .view{max-width:1180px}
 <nav class="nav" id="nav" style="display:none">
   <span class="nav-indicator" id="navInd"></span>
   <button class="nav-btn" data-route="dashboard" title="หน้าหลัก" aria-label="หน้าหลัก">
+    <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
   </button>
   <button class="nav-btn" data-route="tasks" title="งานทั้งหมด" aria-label="งานทั้งหมด">
+    <span class="pillbg"></span>
     <span class="dock-badge" id="tasksBadge"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5h.01M4 12h.01M4 19h.01"/></svg>
   </button>
@@ -498,9 +500,11 @@ body.desktop-report .view{max-width:1180px}
     <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
   </button>
   <button class="nav-btn" data-route="report" title="รายงาน" aria-label="รายงาน">
+    <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
   </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
+    <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
   </button>
 </nav>
@@ -814,20 +818,6 @@ function updateNavBadges(){
   const b=$('#tasksBadge'); if(!b) return;
   b.textContent=open>99?'99+':open; b.classList.toggle('show',open>0);
 }
-/* Animated Dock — ไอคอนขยายตามตำแหน่งนิ้ว/เมาส์ */
-(function dockMagnify(){
-  const nav=$('#nav'); if(!nav) return;
-  const apply=(x)=>$$('#nav [data-route]').forEach(btn=>{
-    const r=btn.getBoundingClientRect(), c=r.left+r.width/2, d=Math.abs(x-c), infl=86;
-    const k=Math.max(0,1-d/infl);
-    btn.style.setProperty('--mscale',(1+k*0.55).toFixed(3));
-    btn.style.setProperty('--mlift',(-k*12).toFixed(1)+'px'); });
-  const reset=()=>$$('#nav [data-route]').forEach(btn=>{ btn.style.setProperty('--mscale','1'); btn.style.setProperty('--mlift','0px'); });
-  nav.addEventListener('pointermove',e=>apply(e.clientX),{passive:true});
-  nav.addEventListener('pointerleave',reset);
-  nav.addEventListener('pointercancel',reset);
-  nav.addEventListener('touchend',()=>setTimeout(reset,180),{passive:true});
-})();
 function markNav(route){
   $$('.nav [data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
 }
@@ -889,8 +879,6 @@ VIEWS.dashboard = (root)=>{
   const open=t.filter(x=>x.status==='open').length;
   const closed=t.filter(x=>x.status==='closed').length;
   const overdue=t.filter(isOverdue).length;
-  const mine=t.filter(x=>x.createdBy===ME.id)
-    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   const recent=t.filter(x=>x.before||x.after||x.compare)
     .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,8);
   root.innerHTML=`
@@ -912,11 +900,7 @@ VIEWS.dashboard = (root)=>{
       <div style="flex:1"><b style="color:var(--red)">งานเกินกำหนด ${overdue} รายการ</b><div style="font-size:13px;color:var(--text-2)">แตะเพื่อดูและจัดการด่วน</div></div>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
     </div>`:''}
-    <div class="section-title">งานที่ฉันส่ง (${mine.length})</div>
-    <div id="mine"></div>`;
-  const m=$('#mine',root);
-  if(!mine.length) m.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ยังไม่มีรายการที่คุณส่ง</b><div style="font-size:13px">กดปุ่ม + เพื่อเปิดงานใหม่</div></div>`));
-  else mine.forEach(x=> m.appendChild(taskCard(x)));
+    <div style="height:6px"></div>`;
   const ov=$('#goOverdue',root); if(ov) ov.onclick=()=>{ TASK_FILTER.status='overdue'; go('tasks'); };
   setupCoverflow(root);
   hydrateAll(root);
@@ -1246,6 +1230,7 @@ VIEWS.report = (root)=>{
         <button class="sw-mini" id="btnDesktop" title="มุมมองคอมพิวเตอร์"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
         <button class="sw-mini" id="btnXlsx" title="ดาวน์โหลด Excel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg></button>
         <button class="sw-mini" id="btnPdf" title="PDF / พิมพ์"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+        <button class="sw-mini" id="btnLineReport" title="ส่งรายงานเข้า LINE" style="background:#06c75520;color:#06c755;border:1px solid #06c75540"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg></button>
       </div>
     </div>
     <div id="repList"></div>`;
@@ -1295,6 +1280,7 @@ VIEWS.report = (root)=>{
     toast(REP_FILTER.desktop?'มุมมองคอมพิวเตอร์':'มุมมองมือถือ','info'); refresh(); };
   $('#btnXlsx',root).onclick=()=>exportXlsx(filtered());
   $('#btnPdf',root).onclick=()=>printReport(filtered());
+  $('#btnLineReport',root).onclick=()=>sendReportLine(filtered());
   refresh();
 };
 function reportCard(t){
@@ -1423,7 +1409,22 @@ async function printReport(arr){
   window.print();
 }
 
-/* ---------- ส่งรายงานเข้า LINE ---------- */
+/* ---------- ส่งรายงานสรุป (ตามตัวกรองปัจจุบัน) เข้า LINE ---------- */
+async function sendReportLine(arr){
+  if(DEMO){ toast('โหมด Demo: ต้อง deploy + ตั้งค่า LINE token ก่อน','info'); return; }
+  if(!arr.length){ toast('ไม่มีข้อมูลให้ส่ง','err'); return; }
+  const open=arr.filter(x=>x.status==='open').length, closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
+  const lines=arr.slice(0,15).map(t=>{ const st=t.status==='closed'?'✅':(isOverdue(t)?'⛔':'🟠');
+    return `${st} ${t.code} ${t.area}`; });
+  const text=`📋 รายงาน Before/After\n🗓 ${fmtDateTime(new Date().toISOString())}\n`
+    +`— — — — —\nทั้งหมด ${arr.length} · รอแก้ไข ${open} · เสร็จ ${closed} · เกินกำหนด ${over}\n— — — — —\n`
+    +lines.join('\n')+(arr.length>15?`\n…และอีก ${arr.length-15} งาน`:'');
+  toast('กำลังส่งเข้า LINE...','info');
+  try{ const r=await api('/api/line/push',{method:'POST',body:JSON.stringify({text})});
+    toast(r&&r.error?('LINE: '+r.error):'ส่งรายงานเข้า LINE แล้ว', r&&r.error?'err':'ok');
+  }catch(e){ toast('ส่งไม่สำเร็จ: '+e.message,'err'); }
+}
+/* ---------- ส่งรายงานรายงานเดี่ยว (รูปเปรียบเทียบ + mention) เข้า LINE ---------- */
 async function sendLine(taskId){
   if(DEMO){ toast('โหมด Demo: ต้อง deploy Worker + ตั้งค่า LINE ก่อน (ดู DEPLOY.md)','info'); return; }
   try{ const r=await api('/api/line/notify',{method:'POST',body:JSON.stringify({taskId})});
@@ -1441,11 +1442,13 @@ VIEWS.settings = (root)=>{
     <div class="section-title">เชื่อมต่อ LINE (Messaging API)</div>
     <div class="card" style="padding:16px">
       <div style="font-size:12.5px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;line-height:1.6">
-        ⚠️ <b>โหมด Demo</b> ยังไม่ได้เชื่อม Worker จริง — Channel access token ต้องเก็บเป็น secret ฝั่ง Cloudflare Worker เท่านั้น (ดู <b>DEPLOY.md</b>) ห้ามใส่ token ในหน้าเว็บตอนใช้งานจริง
+        ${DEMO?'⚠️ <b>โหมด Demo</b> — LINE จะส่งจริงเมื่อใช้งานผ่าน Worker (online) เท่านั้น':'① ก๊อป Webhook URL ไปวางใน LINE Developers → ② เชิญบอทเข้ากลุ่ม (ระบบดัก Group ID อัตโนมัติ) → ③ ปุ่ม "ส่งรายงานเข้า LINE" ในหน้ารายงาน'}
       </div>
+      <div class="form-group"><label>Webhook URL (วางใน LINE Developers Console)</label>
+        <input class="input" id="ln-webhook" readonly value="${CONFIG.API_BASE?esc(CONFIG.API_BASE+'/api/line/webhook'):'(ใช้งานผ่าน online เท่านั้น)'}" style="font-size:12px"></div>
       <div class="form-group"><label>Group ID ปลายทาง</label><input class="input" id="ln-group" placeholder="Cxxxxxxxx (ดักอัตโนมัติจาก webhook)" value="${esc(S.line.groupId)}"></div>
       <label style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;margin-bottom:14px">
-        <input type="checkbox" id="ln-notify" ${S.line.notify?'checked':''} style="width:20px;height:20px"> แจ้งเตือนเข้า LINE เมื่อปิดงาน</label>
+        <input type="checkbox" id="ln-notify" ${S.line.notify?'checked':''} style="width:20px;height:20px"> แจ้งเตือนเข้า LINE เมื่อปิดงาน (เสร็จแล้ว)</label>
       <button class="btn btn-ghost" id="ln-test" style="width:100%">🧪 ทดสอบส่งข้อความ</button>
     </div>
 
@@ -1502,6 +1505,7 @@ VIEWS.settings = (root)=>{
   cl.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editCat(b.dataset.edit));
   $('#addCat',root).onclick=()=>editCat(null);
   // line
+  const wh=$('#ln-webhook',root); if(wh) wh.onclick=()=>{ wh.select(); try{navigator.clipboard.writeText(wh.value);toast('คัดลอก Webhook URL แล้ว','ok');}catch(e){} };
   $('#ln-group',root).addEventListener('change',e=>{ S.line.groupId=e.target.value.trim(); save();
     if(!DEMO) api('/api/line/config',{method:'POST',body:JSON.stringify({groupId:S.line.groupId})}).catch(()=>{}); });
   $('#ln-notify',root).addEventListener('change',e=>{ S.line.notify=e.target.checked; save();

@@ -64,6 +64,12 @@ export default {
       }
       if (pathname === '/api/line/test' && req.method === 'POST')
         return json(await lineTest(env), 200, cors);
+      if (pathname === '/api/line/push' && req.method === 'POST') {
+        const { text } = await req.json();
+        const cfg = await lineConfig(env);
+        if (!cfg.groupId) return json({ error: 'ยังไม่มี Group ID' }, 200, cors);
+        return json(await linePush(env, cfg.groupId, [{ type: 'text', text: String(text || '').slice(0, 4900) }]), 200, cors);
+      }
       if (pathname === '/api/line/notify' && req.method === 'POST')
         return json(await lineNotifyTask((await req.json()).taskId, env), 200, cors);
 
