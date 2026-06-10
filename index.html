@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
 <meta name="theme-color" content="#2563eb" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Before/After Work Tracking</title>
@@ -516,7 +517,7 @@ const CONFIG = {
   API_BASE: "",            // เช่น "https://ba-track.yourname.workers.dev"
   APP_NAME: "Before/After Work Tracking"
 };
-const APP_VER = "v17";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v18";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -944,13 +945,16 @@ VIEWS.dashboard = (root)=>{
   }
   cf.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
   window.addEventListener('resize',()=>{ pad(); upd(); });
-  // เปิดรายละเอียดเมื่อ "แตะ" (กันสับสนกับการปัดเลื่อน) + รองรับทั้ง touch/เมาส์
-  let _o=0; const openCard=(c)=>{ if(!c)return; const now=Date.now(); if(now-_o<450)return; _o=now; openTask(c.dataset.id); };
+  // เปิดรายละเอียด: แตะ coverflow = เปิด "การ์ดที่อยู่ตรงกลาง" (เลี่ยงปัญหา hit-test ของ transform 3D)
+  let _o=0; const openId=(id)=>{ if(!id)return; const now=Date.now(); if(now-_o<450)return; _o=now; openTask(id); };
+  const centeredCard=()=>{ const center=cf.scrollLeft+cf.clientWidth/2; let best=null,bd=1e9;
+    [...track.children].forEach(c=>{ if(!(c.classList&&c.classList.contains('cf-card')))return;
+      const cc=c.offsetLeft+c.offsetWidth/2, d=Math.abs(cc-center); if(d<bd){bd=d;best=c;} }); return best; };
   let tx=0,ty=0,moved=false;
   cf.addEventListener('touchstart',e=>{ const t2=e.touches[0]; tx=t2.clientX; ty=t2.clientY; moved=false; },{passive:true});
   cf.addEventListener('touchmove',e=>{ const t2=e.touches[0]; if(Math.abs(t2.clientX-tx)>10||Math.abs(t2.clientY-ty)>10) moved=true; },{passive:true});
-  cf.addEventListener('touchend',(e)=>{ if(moved)return; const elx=document.elementFromPoint(tx,ty); const c=elx&&elx.closest('.cf-card'); if(c){ e.preventDefault(); openCard(c); } });
-  track.addEventListener('click',e=>{ openCard(e.target.closest('.cf-card')); });
+  cf.addEventListener('touchend',(e)=>{ if(moved)return; const c=centeredCard(); if(c){ e.preventDefault(); openId(c.dataset.id); } });
+  cf.addEventListener('click',()=>{ const c=centeredCard(); if(c) openId(c.dataset.id); });
   statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
   $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
   const sp=$('#sumPanel',root), sc=$('#sumChev',root);
