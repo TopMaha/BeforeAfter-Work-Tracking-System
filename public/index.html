@@ -294,34 +294,34 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sw-mini:active{transform:scale(.9)}
 .dot-color{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 
-/* ============================ BOTTOM NAV (expanding pill) ============================ */
+/* ============================ MAGIC NAV (lift bubble) ============================ */
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:40;
-  display:flex;align-items:center;gap:6px;padding:8px;
-  background:color-mix(in srgb,var(--surface) 88%,transparent);
-  -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
-  border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow-lg);
+  bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:40;
+  width:min(360px,calc(100% - 24px));height:60px;
+  display:flex;align-items:stretch;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:22px;box-shadow:var(--shadow-lg);
 }
 .nav-indicator{display:none}
-.nav-btn{position:relative;display:flex;align-items:center;height:48px;padding:0 15px;border-radius:16px;
-  color:var(--text-2);transition:color .3s var(--ease),transform .12s var(--ease)}
-.nav-btn .pillbg{position:absolute;inset:0;border-radius:16px;
-  background:linear-gradient(135deg,var(--blue-500),var(--blue-700));box-shadow:0 8px 18px rgba(37,99,235,.4);
-  opacity:0;transform:scale(.7);transition:opacity .3s var(--ease),transform .3s var(--ease)}
-.nav-btn svg{position:relative;z-index:1;width:24px;height:24px;stroke-width:2.1;flex-shrink:0}
-.nav-btn .nlabel{position:relative;z-index:1;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;
-  font-weight:800;font-size:14px;transition:max-width .35s var(--ease),opacity .25s,margin-left .35s var(--ease)}
+/* วงกลมสีที่เลื่อน + ลอยขึ้นเหนือแถบ */
+.nav-bubble{position:absolute;top:-22px;width:50px;height:50px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue-400),var(--blue-700));
+  box-shadow:0 10px 22px rgba(37,99,235,.5);transition:left .42s var(--ease),opacity .25s;z-index:1;opacity:0}
+.nav-bubble::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:4px solid var(--bg);}
+.nav-btn{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  color:var(--text-2);transition:color .35s var(--ease)}
+.nav-btn svg{width:25px;height:25px;stroke-width:2.1;transition:transform .42s var(--ease)}
+.nav-btn .nlabel{font-size:10.5px;font-weight:800;opacity:0;transform:translateY(8px);
+  transition:opacity .3s var(--ease),transform .35s var(--ease);position:absolute;bottom:6px}
 .nav-btn.active{color:#fff}
-.nav-btn.active .pillbg{opacity:1;transform:scale(1)}
-.nav-btn.active .nlabel{max-width:96px;opacity:1;margin-left:8px}
-.nav-btn:active{transform:scale(.93)}
-/* "เปิดงาน" tab — accent ให้เด่นกว่าตัวอื่น */
-.nav-cta:not(.active){color:var(--primary)}
-.nav-cta:not(.active) svg{background:var(--primary-soft);border-radius:10px;padding:3px;box-sizing:content-box;width:20px;height:20px}
+.nav-btn.active svg{transform:translateY(-24px) scale(1.08)}        /* ไอคอนลอยขึ้นไปอยู่ในวงกลม */
+.nav-btn.active .nlabel{opacity:1;transform:none;color:var(--text)} /* ชื่อโผล่ด้านล่าง */
+.nav-btn:active svg{transform:scale(.85)}
+.nav-btn.active:active svg{transform:translateY(-24px) scale(.98)}
 
 /* ============================ 3D COVERFLOW (dashboard) ============================ */
-.coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+.coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;
   -webkit-overflow-scrolling:touch;padding:10px 0 6px;margin:0 -16px}
 .coverflow::-webkit-scrollbar{display:none}
 .cf-track{display:flex;align-items:center;width:max-content;
@@ -484,18 +484,16 @@ body.desktop-report .view{max-width:1180px}
 
 <!-- bottom nav -->
 <nav class="nav" id="nav" style="display:none">
+  <span class="nav-bubble" id="navBubble"></span>
   <button class="nav-btn" data-route="dashboard" title="หน้าหลัก" aria-label="หน้าหลัก">
-    <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
     <span class="nlabel">หน้าหลัก</span>
   </button>
-  <button class="nav-btn nav-cta" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
-    <span class="pillbg"></span>
+  <button class="nav-btn" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="nlabel">เปิดงาน</span>
   </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
-    <span class="pillbg"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
     <span class="nlabel">ตั้งค่า</span>
   </button>
@@ -517,7 +515,7 @@ const CONFIG = {
   API_BASE: "https://ba-track.wiphawas-sketchup.workers.dev",  // online
   APP_NAME: "Before/After Work Tracking"
 };
-const APP_VER = "v18";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v19";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -808,7 +806,16 @@ function go(route){
 }
 function markNav(route){
   $$('[data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
+  moveBubble(route); requestAnimationFrame(()=>moveBubble(route));
 }
+function moveBubble(route){
+  const nav=$('#nav'), bub=$('#navBubble'); if(!nav||!bub) return;
+  const btn=nav.querySelector(`.nav-btn[data-route="${route}"]`);
+  if(!btn){ bub.style.opacity=0; return; }
+  const nr=nav.getBoundingClientRect(), br=btn.getBoundingClientRect();
+  bub.style.opacity=1; bub.style.left=(br.left-nr.left + br.width/2 - 25)+'px';
+}
+window.addEventListener('resize',()=>moveBubble(current));
 $('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
 /* ปัดซ้าย/ขวา เพื่อสลับเมนู (ไม่ต้องกดแถบ) — coverflow เลื่อนได้ พอสุดขอบแล้วปัดต่อ = เปลี่ยนหน้า */
 (function swipeNav(){
@@ -1062,9 +1069,12 @@ VIEWS.add = (root)=>{
       </div>
       <div class="form-group">
         <label>รูป Before (จุดที่ต้องแก้)</label>
-        <div class="photo-pick" id="pick-before">
-          <div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่ายรูป / เลือกรูป</b><span>แตะเพื่อเปิดกล้องหรือคลังภาพ</span></div>
-          <input type="file" accept="image/*" id="file-before">
+        <div class="photo-pick" id="pick-before" style="min-height:140px">
+          <div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ยังไม่มีรูป Before</b><span>ถ่ายรูป หรือ เลือกจากคลัง</span></div>
+        </div>
+        <div class="btn-row" style="margin-top:10px">
+          <label class="btn btn-soft" style="flex:1;cursor:pointer">📷 ถ่ายรูป<input type="file" accept="image/*" capture="environment" id="cam-before" hidden></label>
+          <label class="btn btn-ghost" style="flex:1;cursor:pointer">🖼️ เลือกรูป<input type="file" accept="image/*" id="file-before" hidden></label>
         </div>
       </div>
       <button class="btn btn-fill" id="submitOpen">
@@ -1072,15 +1082,14 @@ VIEWS.add = (root)=>{
         เปิดงาน
       </button>
     </div>`;
-  const pick=$('#pick-before',root), fin=$('#file-before',root);
-  fin.addEventListener('change',async e=>{
-    const f=e.target.files[0]; if(!f) return;
+  const pick=$('#pick-before',root);
+  const onPick=async(f)=>{ if(!f) return;
     try{ const blob=await compressImage(f); pendBefore=blob;
-      pick.classList.add('has'); pick.innerHTML=`<img src="${URL.createObjectURL(blob)}"><button class="photo-clear" type="button" id="clrB">✕</button><input type="file" accept="image/*" id="file-before">`;
-      pick.querySelector('#file-before').addEventListener('change',ev=>fin.dispatchEvent(new Event('change')));
-      $('#clrB',pick).onclick=(ev)=>{ev.stopPropagation();VIEWS.add(root);};
-    }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); }
-  });
+      pick.classList.add('has'); pick.innerHTML=`<img src="${URL.createObjectURL(blob)}"><button class="photo-clear" type="button" id="clrB">✕</button>`;
+      $('#clrB',pick).onclick=()=>{ pendBefore=null; VIEWS.add(root); };
+    }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } };
+  $('#cam-before',root).addEventListener('change',e=>onPick(e.target.files[0]));
+  $('#file-before',root).addEventListener('change',e=>onPick(e.target.files[0]));
   $('#submitOpen',root).onclick=async()=>{
     const area=$('#f-area',root).value.trim();
     if(!area){ toast('กรุณากรอกพื้นที่/ชื่อรายการงาน','err'); $('#f-area',root).focus(); return; }
@@ -1502,8 +1511,6 @@ VIEWS.settings = (root)=>{
         <button class="btn btn-ghost" id="setTheme" style="padding:8px 14px">${S.theme==='dark'?'🌙 มืด':'☀️ สว่าง'}</button></div>
       <div class="lrow"><div class="li-main"><b>ออกจากระบบ</b><span>${esc(ME.name)}</span></div>
         <button class="btn btn-danger" id="doLogout" style="padding:8px 14px">ออก</button></div>
-      <div class="lrow"><div class="li-main"><b>รีเซ็ตข้อมูลตัวอย่าง</b><span>ล้างข้อมูล demo ทั้งหมด</span></div>
-        <button class="btn btn-ghost" id="resetDemo" style="padding:8px 14px">รีเซ็ต</button></div>
     </div>
 
     <div class="section-title">พนักงาน (whitelist)</div>
@@ -1523,7 +1530,6 @@ VIEWS.settings = (root)=>{
       </div>
     </div>
     <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>
-    <button class="btn btn-ghost" id="forceUpdate" style="width:100%;margin-bottom:8px">🔄 บังคับอัปเดตแอป (ล้างแคช)</button>
   `;
   // users (collapsible + search)
   const ul=$('#userList',root);
@@ -1568,12 +1574,6 @@ VIEWS.settings = (root)=>{
   // general
   $('#setTheme',root).onclick=()=>{ applyTheme(S.theme==='dark'?'light':'dark'); go('settings'); };
   $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
-  $('#resetDemo',root).onclick=()=>{ if(confirm('รีเซ็ตข้อมูล demo ทั้งหมด?')){ localStorage.removeItem(KEY);
-    indexedDB.deleteDatabase('ba-images'); location.reload(); } };
-  $('#forceUpdate',root).onclick=async()=>{ toast('กำลังอัปเดต...','info');
-    try{ const rs=await navigator.serviceWorker.getRegistrations(); for(const r of rs) await r.unregister(); }catch(e){}
-    try{ const ks=await caches.keys(); for(const k of ks) await caches.delete(k); }catch(e){}
-    location.href=location.pathname+'?u='+Date.now(); };
 };
 function editUser(id){
   const u=id?userById(id):{id:null,code:'',name:'',role:'staff',lineUserId:''};
