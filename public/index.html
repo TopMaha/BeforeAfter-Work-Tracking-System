@@ -321,12 +321,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nav-btn.active:active svg{transform:translateY(-24px) scale(.98)}
 
 /* ============================ 3D COVERFLOW (dashboard) ============================ */
-.coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;
+.coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;
   -webkit-overflow-scrolling:touch;padding:10px 0 6px;margin:0 -16px}
 .coverflow::-webkit-scrollbar{display:none}
 .cf-track{display:flex;align-items:center;width:max-content;
   padding:0 calc(50vw - 122px);transform-style:preserve-3d}
-.cf-card{flex:0 0 224px;width:224px;margin:0 -8px;scroll-snap-align:center;cursor:pointer;touch-action:manipulation;
+.cf-card{flex:0 0 224px;width:224px;margin:0 -8px;cursor:pointer;touch-action:manipulation;
   transform-style:preserve-3d;will-change:transform,opacity}
 .cf-img{position:relative;border-radius:18px;overflow:hidden;background:var(--surface-3);border:1px solid var(--border);
   box-shadow:0 18px 40px rgba(15,40,90,.28);aspect-ratio:4/3}
@@ -515,7 +515,7 @@ const CONFIG = {
   API_BASE: "https://ba-track.wiphawas-sketchup.workers.dev",  // online
   APP_NAME: "Before/After Work Tracking"
 };
-const APP_VER = "v19";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v20";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -950,7 +950,20 @@ VIEWS.dashboard = (root)=>{
       cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420); }
     renderSummary(arr);
   }
-  cf.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
+  // snap เองใน JS (CSS scroll-snap + transform 3D ทำให้เด้งวนเองตอนสุดรายการ)
+  let snapT=null, snapUntil=0;
+  cf.addEventListener('scroll',()=>{ requestAnimationFrame(upd);
+    if(Date.now()<snapUntil) return;            // กำลัง snap อยู่ ไม่สั่งซ้ำ
+    clearTimeout(snapT);
+    snapT=setTimeout(()=>{ const c=centeredCard(); if(!c) return;
+      const max=Math.max(0,cf.scrollWidth-cf.clientWidth);
+      let target=c.offsetLeft+c.offsetWidth/2-cf.clientWidth/2;
+      target=Math.max(0,Math.min(max,target));
+      if(Math.abs(target-cf.scrollLeft)<3) return;
+      snapUntil=Date.now()+800;
+      cf.scrollTo({left:target,behavior:'smooth'});
+    },150);
+  },{passive:true});
   window.addEventListener('resize',()=>{ pad(); upd(); });
   // เปิดรายละเอียด: แตะ coverflow = เปิด "การ์ดที่อยู่ตรงกลาง" (เลี่ยงปัญหา hit-test ของ transform 3D)
   let _o=0; const openId=(id)=>{ if(!id)return; const now=Date.now(); if(now-_o<450)return; _o=now; openTask(id); };
