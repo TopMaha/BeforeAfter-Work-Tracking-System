@@ -1,5 +1,5 @@
 /* Before/After Work Tracking — Service Worker (network-first, always fresh online) */
-const CACHE = 'ba-track-v20';
+const CACHE = 'ba-track-v21';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (e) => {

@@ -257,6 +257,30 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .photo-clear{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:10px;
   background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center}
 
+/* แถบรูปย่อหลายใบ (ฟอร์มเปิดงาน/ส่ง After) */
+.pthumbs{display:flex;gap:8px;flex-wrap:wrap;min-height:84px;padding:8px;border:2px dashed var(--border-2);
+  border-radius:var(--radius);background:var(--surface-2);align-items:center}
+.pthumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.pthumb img{width:100%;height:100%;object-fit:cover}
+.pthumb-x{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:7px;background:rgba(0,0,0,.65);
+  color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;line-height:1}
+.pthumb-empty{width:100%;text-align:center;color:var(--text-3);font-size:12.5px;font-weight:600;padding:14px 6px}
+
+/* แกลเลอรีสไลด์หลายรูปในรายละเอียดงาน (2D — ไม่มี transform จึงใช้ snap ได้) */
+.gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;border-radius:16px;
+  -webkit-overflow-scrolling:touch;margin-bottom:8px}
+.gal::-webkit-scrollbar{display:none}
+.gal-slide{position:relative;flex:0 0 100%;scroll-snap-align:center;border-radius:16px;overflow:hidden;
+  background:var(--surface-3);border:1px solid var(--border)}
+.gal-slide img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.gal-tag{position:absolute;top:10px;left:10px;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;color:#fff}
+.gal-tag.b{background:rgba(0,0,0,.66)} .gal-tag.a{background:rgba(37,99,235,.92)}
+.gal-del{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:9px;background:rgba(220,38,38,.85);
+  color:#fff;display:grid;place-items:center;font-size:13px}
+.gal-dots{display:flex;gap:5px;justify-content:center;margin-bottom:14px}
+.gal-dots i{width:7px;height:7px;border-radius:50%;background:var(--border-2);transition:.2s}
+.gal-dots i.on{background:var(--primary);width:18px;border-radius:4px}
+
 .btn{padding:14px;border-radius:14px;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .14s var(--ease),opacity .2s}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.5;pointer-events:none}
@@ -275,6 +299,13 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* category bars */
 .cat-row{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.cat-btn{width:100%;padding:8px;border-radius:12px;border:1.4px solid transparent;background:none;transition:.18s}
+.cat-btn:active{transform:scale(.97)}
+.cat-btn.cat-on{border-color:var(--primary);background:var(--primary-soft)}
+.tagwrap{display:flex;flex-wrap:wrap;gap:8px;min-height:34px;align-items:center}
+.tag-item{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;font-size:13.5px;font-weight:700;
+  background:var(--surface-3);border:1px solid var(--border)}
+.tag-item button{color:var(--red);font-weight:800;font-size:12px}
 .cat-row .nm{width:96px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cat-row .bar{flex:1;height:12px;border-radius:8px;background:var(--surface-3);overflow:hidden}
 .cat-row .bar i{display:block;height:100%;border-radius:8px;transition:width .8s var(--ease)}
@@ -335,6 +366,8 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .cf-badge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;color:#fff}
 .cf-open{position:absolute;bottom:8px;right:8px;display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;
   padding:4px 8px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(3px)}
+.cf-count{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;
+  background:rgba(0,0,0,.55);color:#fff}
 .cf-cap{margin-top:8px;text-align:center;padding:0 8px}
 .cf-cap b{font-size:12px;color:var(--primary)}
 .cf-cap span{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -515,7 +548,7 @@ const CONFIG = {
   API_BASE: "",            // เช่น "https://ba-track.yourname.workers.dev"
   APP_NAME: "Before/After Work Tracking"
 };
-const APP_VER = "v20";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v21";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -537,6 +570,16 @@ function fmtDateTime(iso){ if(!iso) return '-'; const d=new Date(iso);
 function daysLeft(iso){ if(!iso) return null; const ms=new Date(iso+'T23:59:59')-new Date();
   return Math.ceil(ms/86400000); }
 function isOverdue(t){ return t.status!=='closed' && t.dueDate && daysLeft(t.dueDate)<0; }
+/* รูปหลายใบต่อช่อง: เก็บเป็นคีย์คั่นด้วยจุลภาคใน t.before / t.after (เข้ากันได้กับข้อมูลเก่า) */
+const MAX_IMGS = 5;
+const keyList = (s)=>String(s||'').split(',').filter(Boolean);
+const firstKey = (s)=>keyList(s)[0]||null;
+/* เก็บรูป + สร้าง thumbnail (th-<key>) ไว้แสดงในการ์ด/สไลด์ ให้โหลดไว ประหยัดเน็ต */
+async function putPhoto(key, blob){
+  await IMG.put(key, blob);
+  try{ const th=await compressImage(blob, 360, 0.72); await IMG.put('th-'+key, th); }catch(e){}
+  return key;
+}
 
 /* ======================= IMAGE STORE (IndexedDB) ======================= */
 const IMG = (() => {
@@ -593,7 +636,10 @@ let S = load();
 let ME = null;
 
 function load(){
-  try{ const r=localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
+  try{ const r=localStorage.getItem(KEY); if(r){ const s=JSON.parse(r);
+    if(!s.depts||!s.depts.length) s.depts=['VSM1','VSM2','VSM3','VSM4','QC'];
+    if(!s.machines) s.machines=[];
+    return s; } }catch(e){}
   return seed();
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ console.warn('save failed',e); } }
@@ -674,6 +720,7 @@ function seed(){
       {id:uid(),taskId:t2.id,type:'open',userId:'L-1827',name:'นายสุทิศ ภูถมดี',at:t2.createdAt}
     ],
     line:{token:'',groupId:'',groups:[],notify:true},
+    depts:['VSM1','VSM2','VSM3','VSM4','QC'], machines:[],
     counter:2, theme:'light'
   };
 }
@@ -690,35 +737,55 @@ function logAdd(taskId,type){ S.logs.push({id:uid(),taskId,type,userId:ME.id,nam
    ============================================================================= */
 const DATA = {
   async bootstrap(){ if(DEMO) return; const b=await api('/api/bootstrap');
-    S.users=b.users||[]; S.categories=b.categories||[]; S.tasks=b.tasks||[]; },
+    S.users=b.users||[]; S.categories=b.categories||[]; S.tasks=b.tasks||[];
+    if(b.departments&&b.departments.length) S.depts=b.departments;
+    if(b.machines) S.machines=b.machines; },
   async refresh(){ if(DEMO) return; const b=await api('/api/tasks'); S.tasks=b.tasks||[]; },
 
-  async createTask(p, beforeBlob){
-    if(DEMO){ const beforeId=uid(); await IMG.put(beforeId,beforeBlob);
+  async createTask(p, beforeBlobs){
+    const keys=[];
+    for(const b of (beforeBlobs||[]).slice(0,MAX_IMGS)){ const k=DEMO?uid():('before-'+uid()); await putPhoto(k,b); keys.push(k); }
+    const before=keys.join(',');
+    if(DEMO){
       const t={ id:uid(), code:nextCode(), category:p.category, area:p.area, detail:p.detail,
+        dept:p.dept||'VSM4', machine:p.machine||'',
         assigneeId:p.assigneeId, createdBy:ME.id, dueDate:p.dueDate, status:'open',
-        before:beforeId, after:null, compare:null,
+        before, after:null, compare:null,
         createdAt:new Date().toISOString(), submittedAt:null, closedAt:null, closedBy:null, comments:[] };
       S.tasks.push(t); logAdd(t.id,'open'); save(); return t; }
-    const key='before-'+uid(); await IMG.put(key,beforeBlob);
-    const r=await api('/api/tasks',{method:'POST',body:JSON.stringify({...p, before:key, createdBy:ME.id, createdByName:ME.name})});
+    const r=await api('/api/tasks',{method:'POST',body:JSON.stringify({...p, before, createdBy:ME.id, createdByName:ME.name})});
     await this.refresh(); return S.tasks.find(x=>x.id===r.id)||r; },
 
-  // ส่งรูป After = ถือว่าแก้ไขเสร็จทันที (ไม่มีขั้นรออนุมัติ)
-  async submitAfter(t, afterBlob){
-    if(afterBlob){ const key=DEMO?uid():('after-'+uid()); await IMG.put(key,afterBlob); t.after=key; }
+  // ส่งรูป After (ได้หลายรูป) = ถือว่าแก้ไขเสร็จทันที
+  async submitAfter(t, afterBlobs){
+    if(afterBlobs&&afterBlobs.length){ const keys=keyList(t.after);
+      for(const b of afterBlobs){ if(keys.length>=MAX_IMGS) break;
+        const k=DEMO?uid():('after-'+uid()); await putPhoto(k,b); keys.push(k); }
+      t.after=keys.join(','); }
     const now=new Date().toISOString();
     t.status='closed'; t.submittedAt=now; t.closedAt=now; t.closedBy=ME.id; await buildCompare(t);
     if(DEMO){ logAdd(t.id,'done'); save(); return; }
     await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({after:t.after,compare:t.compare,status:'closed',submittedAt:now,closedAt:now,closedBy:ME.id,_log:'done',_userId:ME.id,_userName:ME.name})});
     await this.refresh(); },
 
-  // เปลี่ยน/เพิ่มรูป Before หรือ After (ใครก็ได้)
-  async setPhoto(t, which, blob){   // which = 'before' | 'after'
-    const key=DEMO?uid():(which+'-'+uid()); await IMG.put(key,blob); t[which]=key;
-    if(t.before && t.after) await buildCompare(t);
+  // เพิ่มรูปอีกมุม (Before/After ได้สูงสุด 5 รูปต่อช่อง)
+  async addPhotos(t, which, blobs){   // which = 'before' | 'after'
+    const keys=keyList(t[which]);
+    for(const b of (blobs||[])){ if(keys.length>=MAX_IMGS){ toast('ครบ '+MAX_IMGS+' รูปแล้ว','err'); break; }
+      const k=DEMO?uid():(which+'-'+uid()); await putPhoto(k,b); keys.push(k); }
+    t[which]=keys.join(',');
+    if(firstKey(t.before) && firstKey(t.after)) await buildCompare(t);
     if(DEMO){ logAdd(t.id,'edit'); save(); return; }
-    const patch={_log:'edit',_userId:ME.id,_userName:ME.name}; patch[which]=key; if(t.compare) patch.compare=t.compare;
+    const patch={_log:'edit',_userId:ME.id,_userName:ME.name}; patch[which]=t[which]; if(t.compare) patch.compare=t.compare;
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify(patch)});
+    await this.refresh(); },
+
+  // ลบรูปออกจากชุด
+  async removePhoto(t, which, key){
+    const keys=keyList(t[which]).filter(k=>k!==key);
+    t[which]=keys.join(','); IMG.del(key); IMG.del('th-'+key);
+    if(DEMO){ logAdd(t.id,'edit'); save(); return; }
+    const patch={_log:'edit',_userId:ME.id,_userName:ME.name}; patch[which]=t[which];
     await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify(patch)});
     await this.refresh(); },
 
@@ -726,8 +793,15 @@ const DATA = {
   async editTask(t, f){
     Object.assign(t, f);
     if(DEMO){ save(); return; }
-    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({area:t.area,detail:t.detail,category:t.category,assigneeId:t.assigneeId,dueDate:t.dueDate,_log:'edit',_userId:ME.id,_userName:ME.name})});
+    await api('/api/tasks/'+t.id,{method:'PATCH',body:JSON.stringify({area:t.area,detail:t.detail,category:t.category,dept:t.dept,machine:t.machine,assigneeId:t.assigneeId,dueDate:t.dueDate,_log:'edit',_userId:ME.id,_userName:ME.name})});
     await this.refresh(); },
+
+  // ตั้งค่าแผนก/หมายเลขเครื่อง
+  async saveConfig(p){
+    if('departments' in p) S.depts=p.departments;
+    if('machines' in p) S.machines=p.machines;
+    if(DEMO){ save(); return; }
+    await api('/api/config',{method:'POST',body:JSON.stringify(p)}); },
 
   async closeTask(t){ if(!t.compare) await buildCompare(t);
     t.status='closed'; t.closedAt=new Date().toISOString(); t.closedBy=ME.id;
@@ -741,7 +815,7 @@ const DATA = {
     await this.refresh(); },
 
   async removeTask(t){
-    if(DEMO){ IMG.del(t.before);IMG.del(t.after);IMG.del(t.compare);
+    if(DEMO){ [...keyList(t.before),...keyList(t.after),...keyList(t.compare)].forEach(k=>{ IMG.del(k); IMG.del('th-'+k); });
       S.tasks=S.tasks.filter(x=>x.id!==t.id); S.logs=S.logs.filter(l=>l.taskId!==t.id); save(); return; }
     await api('/api/tasks/'+t.id,{method:'DELETE'}); await this.refresh(); },
 
@@ -816,21 +890,18 @@ function moveBubble(route){
   bub.style.opacity=1; bub.style.left=(br.left-nr.left + br.width/2 - 25)+'px';
 }
 window.addEventListener('resize',()=>moveBubble(current));
-$('#nav').addEventListener('click',e=>{ const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
-/* ปัดซ้าย/ขวา เพื่อสลับเมนู (ไม่ต้องกดแถบ) — coverflow เลื่อนได้ พอสุดขอบแล้วปัดต่อ = เปลี่ยนหน้า */
+let _navSwipedAt=0;
+$('#nav').addEventListener('click',e=>{ if(Date.now()-_navSwipedAt<350) return;
+  const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
+/* ปัดซ้าย/ขวา "เฉพาะบนแถบเมนู" เพื่อสลับหน้า — ปัดบนเนื้อหา = เลื่อนเนื้อหา ไม่เปลี่ยนหน้า */
 (function swipeNav(){
-  const ORDER=['dashboard','add','settings']; let sx=0,sy=0,st=0,ok=false,cfEl=null;
-  const app=$('#app');
-  app.addEventListener('touchstart',e=>{
-    if(modalBack.classList.contains('show')||e.target.closest('input,textarea,select')){ ok=false; return; }
-    cfEl=e.target.closest('.coverflow');
-    const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true; },{passive:true});
-  app.addEventListener('touchend',e=>{ if(!ok)return; ok=false;
+  const ORDER=['dashboard','add','settings']; let sx=0,sy=0,st=0,ok=false;
+  const nav=$('#nav');
+  nav.addEventListener('touchstart',e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true; },{passive:true});
+  nav.addEventListener('touchend',e=>{ if(!ok)return; ok=false;
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-    if(Date.now()-st>700 || Math.abs(dx)<55 || Math.abs(dx)<Math.abs(dy)*1.4) return;
-    if(cfEl){ // ปัดในโซน coverflow → เปลี่ยนหน้าเฉพาะตอนเลื่อนสุดขอบแล้ว
-      const atLeft=cfEl.scrollLeft<=4, atRight=cfEl.scrollLeft+cfEl.clientWidth>=cfEl.scrollWidth-4;
-      if(dx<0 && !atRight) return; if(dx>0 && !atLeft) return; }
+    if(Date.now()-st>700 || Math.abs(dx)<40 || Math.abs(dx)<Math.abs(dy)) return;
+    _navSwipedAt=Date.now();                       // กัน click ของปุ่มที่นิ้วปล่อยทับ
     const i=ORDER.indexOf(current);
     if(dx<0 && i<ORDER.length-1) go(ORDER[i+1]);
     else if(dx>0 && i>0) go(ORDER[i-1]); },{passive:true});
@@ -869,15 +940,18 @@ function notifyDue(){
 }
 
 /* ======================= IMAGE RENDER HELPERS ======================= */
-async function hydrateImg(imgEl){ const id=imgEl.dataset.img; const u=await IMG.url(id);
-  if(u){ imgEl.src=u; imgEl.style.opacity=1; } }
+async function hydrateImg(imgEl){ const id=imgEl.dataset.img; if(!id) return;
+  const tu=await IMG.url('th-'+id), fu=await IMG.url(id);
+  if(tu){ imgEl.onerror=()=>{ imgEl.onerror=null; if(fu) imgEl.src=fu; };  // ไม่มี thumb (รูปเก่า) → ใช้รูปเต็ม
+    imgEl.src=tu; imgEl.style.opacity=1; }
+  else if(fu){ imgEl.src=fu; imgEl.style.opacity=1; } }
 function hydrateAll(root){ $$('img[data-img]',root).forEach(hydrateImg); }
 
 /* ======================= VIEWS ======================= */
 const VIEWS = {};
 
 /* ---------- Dashboard ---------- */
-let DASH={status:'all',q:''};
+let DASH={status:'all',q:'',cat:'all',dept:'all'};
 VIEWS.dashboard = (root)=>{
   const t=S.tasks;
   const counts={ open:t.filter(x=>x.status==='open').length, closed:t.filter(x=>x.status==='closed').length,
@@ -894,9 +968,15 @@ VIEWS.dashboard = (root)=>{
       ${statCard('s-overdue',counts.overdue,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>','overdue')}
       ${statCard('s-pending',counts.all,'ทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>','all')}
     </div>
-    <div class="search-box" style="margin-top:16px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
-      <input id="dq" placeholder="ค้นหา รหัส / พื้นที่ / รายละเอียด" value="${esc(DASH.q)}">
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <div class="search-box" style="flex:1;margin:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+        <input id="dq" placeholder="ค้นหา รหัส / พื้นที่ / เครื่อง" value="${esc(DASH.q)}">
+      </div>
+      <select class="input" id="ddept" style="width:108px;flex-shrink:0;padding:13px 8px;border-radius:14px;font-size:14px">
+        <option value="all">ทุกแผนก</option>
+        ${(S.depts||[]).map(d=>`<option value="${esc(d)}" ${DASH.dept===d?'selected':''}>${esc(d)}</option>`).join('')}
+      </select>
     </div>
     <div class="section-title" id="cfTitle" style="margin:18px 4px 2px"></div>
     <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack"></div></div>
@@ -930,25 +1010,37 @@ VIEWS.dashboard = (root)=>{
       const rot=c*-42, sc=1-Math.min(0.36,Math.abs(c)*0.36), tz=-Math.abs(c)*150, op=1-Math.min(0.62,Math.abs(c)*0.62);
       card.style.transform=`translateZ(${tz}px) rotateY(${rot}deg) scale(${sc})`;
       card.style.opacity=op.toFixed(3); card.style.zIndex=String(200-Math.round(Math.abs(c)*100)); }); };
-  const getFiltered=()=>{
+  const baseFiltered=()=>{    // กรองทุกอย่าง "ยกเว้นหมวด" (ใช้วาดกราฟหมวดให้กดสลับได้)
     let arr=t.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     if(DASH.status==='overdue') arr=arr.filter(isOverdue);
     else if(DASH.status!=='all') arr=arr.filter(x=>x.status===DASH.status);
-    if(DASH.q){ const q=DASH.q.toLowerCase(); arr=arr.filter(x=>(x.code+' '+x.area+' '+(x.detail||'')).toLowerCase().includes(q)); }
+    if(DASH.dept!=='all') arr=arr.filter(x=>(x.dept||'VSM4')===DASH.dept);
+    if(DASH.q){ const q=DASH.q.toLowerCase(); arr=arr.filter(x=>(x.code+' '+x.area+' '+(x.detail||'')+' '+(x.machine||'')+' '+(x.dept||'')).toLowerCase().includes(q)); }
     return arr;
   };
-  function renderSummary(arr){ const sb=$('#sumBars',root); if(!sb) return;
-    const byCat=S.categories.map(c=>({c,n:arr.filter(x=>x.category===c.id).length}));
+  const getFiltered=()=>{ let arr=baseFiltered();
+    if(DASH.cat!=='all') arr=arr.filter(x=>x.category===DASH.cat);
+    return arr; };
+  function renderSummary(){ const sb=$('#sumBars',root); if(!sb) return;
+    const base=baseFiltered();
+    const byCat=S.categories.map(c=>({c,n:base.filter(x=>x.category===c.id).length}));
     const maxc=Math.max(1,...byCat.map(x=>x.n));
-    sb.innerHTML=byCat.map(({c,n})=>`<div class="cat-row"><span class="nm">${esc(c.name)}</span><div class="bar"><i style="width:${n/maxc*100}%;background:${c.color}"></i></div><span class="ct">${n}</span></div>`).join('')||'<div style="color:var(--text-3);font-size:13px">—</div>';
+    sb.innerHTML=`<div style="font-size:12px;color:var(--text-3);font-weight:700;margin-bottom:10px">แตะหมวดเพื่อกรองการ์ดด้านบน (ใช้ร่วมกับสถานะ/แผนก/ค้นหา)</div>`+
+      byCat.map(({c,n})=>`<button type="button" class="cat-row cat-btn ${DASH.cat===c.id?'cat-on':''}" data-cat="${c.id}">
+        <span class="nm">${esc(c.name)}</span><div class="bar"><i style="width:${n/maxc*100}%;background:${c.color}"></i></div><span class="ct">${n}</span></button>`).join('')
+      +(DASH.cat!=='all'?`<button type="button" class="btn btn-soft" id="catClear" style="width:100%;margin-top:6px;padding:9px">✕ ล้างตัวกรองหมวด</button>`:'');
+    sb.querySelectorAll('.cat-btn').forEach(b=>b.onclick=()=>{ DASH.cat=(DASH.cat===b.dataset.cat)?'all':b.dataset.cat; render(); });
+    const cc=$('#catClear',root); if(cc) cc.onclick=()=>{ DASH.cat='all'; render(); };
   }
   function render(){
     const arr=getFiltered();
-    cfTitle.textContent=`${LBL[DASH.status]||''} (${arr.length})`;
+    const catNm=DASH.cat!=='all'&&catById(DASH.cat)?` · ${catById(DASH.cat).name}`:'';
+    const deptNm=DASH.dept!=='all'?` · ${DASH.dept}`:'';
+    cfTitle.textContent=`${LBL[DASH.status]||''}${catNm}${deptNm} (${arr.length})`;
     if(!arr.length){ track.style.padding='0'; track.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; }
     else { track.innerHTML=arr.map(cfCard).join(''); pad(); hydrateAll(track);
       cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420); }
-    renderSummary(arr);
+    renderSummary();
   }
   // snap เองใน JS (CSS scroll-snap + transform 3D ทำให้เด้งวนเองตอนสุดรายการ)
   let snapT=null, snapUntil=0;
@@ -977,6 +1069,7 @@ VIEWS.dashboard = (root)=>{
   cf.addEventListener('click',()=>{ const c=centeredCard(); if(c) openId(c.dataset.id); });
   statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
   $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
+  $('#ddept',root).addEventListener('change',e=>{ DASH.dept=e.target.value; render(); });
   const sp=$('#sumPanel',root), sc=$('#sumChev',root);
   $('#sumToggle',root).onclick=()=>{ const open=sp.style.display!=='none'; sp.style.display=open?'none':'block'; sc.style.transform=open?'':'rotate(180deg)'; };
   $('#dExcel',root).onclick=()=>exportXlsx(getFiltered());
@@ -985,13 +1078,15 @@ VIEWS.dashboard = (root)=>{
   applyActive(); render();
 };
 function cfCard(t){
-  const img=t.compare||t.before||t.after;
+  const img=firstKey(t.compare)||firstKey(t.before)||firstKey(t.after);   // การ์ดแสดงรูปแรกรูปเดียว
+  const nImg=keyList(t.before).length+keyList(t.after).length;
   const bg=t.status==='closed'?'#16a34a':(isOverdue(t)?'#dc2626':'#f59e0b');
   return `<div class="cf-card" data-id="${t.id}" role="button" tabindex="0">
     <div class="cf-img">${img?`<img data-img="${img}" style="opacity:0;transition:opacity .35s">`:`<div class="cf-ph">ไม่มีรูป</div>`}
       <span class="cf-badge" style="background:${bg}">${stName(t.status)}</span>
+      ${nImg>1?`<span class="cf-count">🖼 ${nImg}</span>`:''}
       <span class="cf-open"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M14 10l7-7M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg> ดู/แก้ไข</span></div>
-    <div class="cf-cap"><b>${t.code}</b><span>${esc(t.area)}</span></div>
+    <div class="cf-cap"><b>${t.code}${t.dept?` · ${esc(t.dept)}`:''}</b><span>${esc(t.area)}${t.machine?' · '+esc(t.machine):''}</span></div>
   </div>`;
 }
 function statCard(cls,n,l,svg,key){
@@ -1005,9 +1100,9 @@ function taskCard(t){
   const dl=daysLeft(t.dueDate); const ov=isOverdue(t);
   const c=el(`<div class="card tap task-card">
     <div class="task-thumbs">
-      ${t.before?`<div class="thumb-wrap"><img class="thumb" data-img="${t.before}" style="opacity:0;transition:opacity .3s"><span class="thumb-tag b">B</span></div>`
+      ${firstKey(t.before)?`<div class="thumb-wrap"><img class="thumb" data-img="${firstKey(t.before)}" style="opacity:0;transition:opacity .3s"><span class="thumb-tag b">B</span></div>`
         :`<div class="thumb thumb-empty">Before</div>`}
-      ${t.after?`<div class="thumb-wrap"><img class="thumb" data-img="${t.after}" style="opacity:0;transition:opacity .3s"><span class="thumb-tag a">A</span></div>`
+      ${firstKey(t.after)?`<div class="thumb-wrap"><img class="thumb" data-img="${firstKey(t.after)}" style="opacity:0;transition:opacity .3s"><span class="thumb-tag a">A</span></div>`
         :`<div class="thumb thumb-empty">After</div>`}
     </div>
     <div class="task-body">
@@ -1057,37 +1152,46 @@ VIEWS.tasks = (root)=>{
 };
 
 /* ---------- Add (open task) ---------- */
-let pendBefore=null; // {blob}
+let pendBefores=[]; // blobs (สูงสุด MAX_IMGS)
 VIEWS.add = (root)=>{
-  pendBefore=null;
+  pendBefores=[];
   root.innerHTML=`
     <div class="card" style="padding:16px">
-      <div class="form-group">
-        <label>หมวดหมู่</label>
-        <select class="input" id="f-cat">${S.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+      <div class="btn-row" style="margin-bottom:16px">
+        <div class="form-group" style="flex:1;margin:0">
+          <label>แผนก</label>
+          <select class="input" id="f-dept">${(S.depts||[]).map(d=>`<option value="${esc(d)}" ${d==='VSM4'?'selected':''}>${esc(d)}</option>`).join('')}</select>
+        </div>
+        <div class="form-group" style="flex:1;margin:0">
+          <label>หมวดหมู่</label>
+          <select class="input" id="f-cat">${S.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+        </div>
       </div>
       <div class="form-group">
         <label>พื้นที่ / ชื่อรายการงาน</label>
         <input class="input" id="f-area" placeholder="เช่น ทางเดินไลน์ A, ชั้นวางอะไหล่">
       </div>
-      <div class="form-group">
-        <label>รายละเอียดจุดที่ต้องแก้ไข</label>
-        <textarea class="input" id="f-detail" placeholder="อธิบายปัญหา/สิ่งที่ต้องปรับปรุง"></textarea>
-      </div>
       <div class="btn-row" style="margin-bottom:16px">
+        <div class="form-group" style="flex:1;margin:0">
+          <label>หมายเลขเครื่อง (ถ้ามี)</label>
+          <input class="input" id="f-machine" list="machineList" placeholder="เช่น G-232">
+          <datalist id="machineList">${(S.machines||[]).map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
+        </div>
         <div class="form-group" style="flex:1;margin:0">
           <label>วันครบกำหนด</label>
           <input class="input" id="f-due" type="date" value="${isoIn(3)}">
         </div>
       </div>
       <div class="form-group">
-        <label>รูป Before (จุดที่ต้องแก้)</label>
-        <div class="photo-pick" id="pick-before" style="min-height:140px">
-          <div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ยังไม่มีรูป Before</b><span>ถ่ายรูป หรือ เลือกจากคลัง</span></div>
-        </div>
+        <label>รายละเอียดจุดที่ต้องแก้ไข</label>
+        <textarea class="input" id="f-detail" placeholder="อธิบายปัญหา/สิ่งที่ต้องปรับปรุง"></textarea>
+      </div>
+      <div class="form-group">
+        <label>รูป Before — <span id="bCount">0</span>/${MAX_IMGS} รูป (ถ่ายได้หลายมุม)</label>
+        <div id="bThumbs" class="pthumbs"></div>
         <div class="btn-row" style="margin-top:10px">
           <label class="btn btn-soft" style="flex:1;cursor:pointer">📷 ถ่ายรูป<input type="file" accept="image/*" capture="environment" id="cam-before" hidden></label>
-          <label class="btn btn-ghost" style="flex:1;cursor:pointer">🖼️ เลือกรูป<input type="file" accept="image/*" id="file-before" hidden></label>
+          <label class="btn btn-ghost" style="flex:1;cursor:pointer">🖼️ เลือกรูป<input type="file" accept="image/*" multiple id="file-before" hidden></label>
         </div>
       </div>
       <button class="btn btn-fill" id="submitOpen">
@@ -1095,23 +1199,31 @@ VIEWS.add = (root)=>{
         เปิดงาน
       </button>
     </div>`;
-  const pick=$('#pick-before',root);
-  const onPick=async(f)=>{ if(!f) return;
-    try{ const blob=await compressImage(f); pendBefore=blob;
-      pick.classList.add('has'); pick.innerHTML=`<img src="${URL.createObjectURL(blob)}"><button class="photo-clear" type="button" id="clrB">✕</button>`;
-      $('#clrB',pick).onclick=()=>{ pendBefore=null; VIEWS.add(root); };
-    }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } };
-  $('#cam-before',root).addEventListener('change',e=>onPick(e.target.files[0]));
-  $('#file-before',root).addEventListener('change',e=>onPick(e.target.files[0]));
+  const thumbs=$('#bThumbs',root);
+  function renderThumbs(){
+    $('#bCount',root).textContent=pendBefores.length;
+    thumbs.innerHTML=pendBefores.length?'' : '<div class="pthumb-empty">ยังไม่มีรูป — ถ่ายรูป หรือเลือกจากคลัง</div>';
+    pendBefores.forEach((b,i)=>{ const d=el(`<div class="pthumb"><img src="${URL.createObjectURL(b)}"><button type="button" class="pthumb-x">✕</button></div>`);
+      d.querySelector('.pthumb-x').onclick=()=>{ pendBefores.splice(i,1); renderThumbs(); };
+      thumbs.appendChild(d); });
+  }
+  const onPick=async(files)=>{ for(const f of [...files]){
+      if(pendBefores.length>=MAX_IMGS){ toast('ครบ '+MAX_IMGS+' รูปแล้ว','err'); break; }
+      try{ pendBefores.push(await compressImage(f)); }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } }
+    renderThumbs(); };
+  $('#cam-before',root).addEventListener('change',e=>{ onPick(e.target.files); e.target.value=''; });
+  $('#file-before',root).addEventListener('change',e=>{ onPick(e.target.files); e.target.value=''; });
+  renderThumbs();
   $('#submitOpen',root).onclick=async()=>{
     const area=$('#f-area',root).value.trim();
     if(!area){ toast('กรุณากรอกพื้นที่/ชื่อรายการงาน','err'); $('#f-area',root).focus(); return; }
-    if(!pendBefore){ toast('กรุณาเพิ่มรูป Before','err'); return; }
+    if(!pendBefores.length){ toast('กรุณาเพิ่มรูป Before อย่างน้อย 1 รูป','err'); return; }
     const btn=$('#submitOpen',root); btn.disabled=true; btn.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังบันทึก...';
     try{
       const t=await DATA.createTask({ category:$('#f-cat',root).value, area,
+        dept:$('#f-dept',root).value, machine:$('#f-machine',root).value.trim(),
         detail:$('#f-detail',root).value.trim(), assigneeId:'',
-        dueDate:$('#f-due',root).value }, pendBefore);
+        dueDate:$('#f-due',root).value }, pendBefores);
       toast('เปิดงาน '+(t&&t.code?t.code:'')+' สำเร็จ','ok'); DASH.status='open'; go('dashboard');
     }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err');
       btn.disabled=false; btn.innerHTML='เปิดงาน'; }
@@ -1121,9 +1233,13 @@ VIEWS.add = (root)=>{
 /* ---------- Task detail / actions ---------- */
 async function openTask(id){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
-  const cat=catById(t.category), a=userById(t.assigneeId), opener=userById(t.createdBy);
+  const cat=catById(t.category), opener=userById(t.createdBy);
   const ov=isOverdue(t);
-  const beforeU=await IMG.url(t.before), afterU=await IMG.url(t.after), compU=await IMG.url(t.compare);
+  const bKeys=keyList(t.before), aKeys=keyList(t.after);
+  const compU=await IMG.url(firstKey(t.compare));
+  const slides=[ ...bKeys.map((k,i)=>({k,which:'before',label:`BEFORE ${i+1}/${bKeys.length}`,cls:'b'})),
+                 ...aKeys.map((k,i)=>({k,which:'after',label:`AFTER ${i+1}/${aKeys.length}`,cls:'a'})) ];
+  const slideUrls={}; for(const s of slides) slideUrls[s.k]=await IMG.url(s.k);
   const logs=(t.logs||S.logs.filter(l=>l.taskId===id)).filter(l=>l.type!=='comment').sort((x,y)=>x.at.localeCompare(y.at));
   const LBL={open:'เปิดงาน',done:'แก้ไขเสร็จ',edit:'แก้ไขข้อมูล',reopen:'เปิดงานใหม่',submit:'ส่งงานแก้ไข',close:'ปิดงาน'};
   const canSubmit = t.status!=='closed';   // เปิดอยู่ = ใครก็ส่งรูป After ได้
@@ -1131,30 +1247,36 @@ async function openTask(id){
 
   openModal(`
     <h3>${esc(t.area)}</h3>
-    <div class="sub">${t.code} · <span class="badge ${stBadge(t.status)}" style="vertical-align:middle">${stName(t.status)}</span></div>
-    <div class="compare">
-      <figure class="cb">${beforeU?`<img src="${beforeU}">`:`<div class="ph">ยังไม่มีรูป<br>Before</div>`}<figcaption>BEFORE</figcaption></figure>
-      <figure class="ca">${afterU?`<img src="${afterU}">`:`<div class="ph">ยังไม่มีรูป<br>After</div>`}<figcaption>AFTER</figcaption></figure>
+    <div class="sub">${t.code} · <span class="badge ${stBadge(t.status)}" style="vertical-align:middle">${stName(t.status)}</span>${t.dept?` · <b style="color:var(--primary)">${esc(t.dept)}</b>`:''}${t.machine?` · ${esc(t.machine)}`:''}</div>
+    <div class="gal" id="gal">
+      ${slides.map(s=>`<div class="gal-slide"><img src="${slideUrls[s.k]||''}"><span class="gal-tag ${s.cls}">${s.label}</span>
+        ${slides.length>1?`<button class="gal-del" data-which="${s.which}" data-key="${s.k}" title="ลบรูปนี้">🗑</button>`:''}</div>`).join('')
+        ||`<div class="gal-slide"><div style="aspect-ratio:4/3;display:grid;place-items:center;color:var(--text-3);font-weight:700">ยังไม่มีรูป</div></div>`}
     </div>
+    ${slides.length>1?`<div class="gal-dots" id="galDots">${slides.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>`:''}
     <div class="btn-row" style="margin-bottom:14px">
-      <label class="btn btn-ghost" style="flex:1;cursor:pointer">📷 ${beforeU?'เปลี่ยน':'เพิ่ม'} Before<input type="file" accept="image/*" id="editBefore" hidden></label>
-      <label class="btn btn-ghost" style="flex:1;cursor:pointer">📷 ${afterU?'เปลี่ยน':'เพิ่ม'} After<input type="file" accept="image/*" id="editAfter" hidden></label>
+      <label class="btn btn-ghost" style="flex:1;cursor:pointer">＋ Before (${bKeys.length}/${MAX_IMGS})<input type="file" accept="image/*" multiple id="editBefore" hidden ${bKeys.length>=MAX_IMGS?'disabled':''}></label>
+      <label class="btn btn-ghost" style="flex:1;cursor:pointer">＋ After (${aKeys.length}/${MAX_IMGS})<input type="file" accept="image/*" multiple id="editAfter" hidden ${aKeys.length>=MAX_IMGS?'disabled':''}></label>
     </div>
     ${compU?`<div style="margin-bottom:14px"><div class="meta-item" style="padding:0;overflow:hidden"><img src="${compU}" style="width:100%;display:block"></div>
       <button class="btn btn-soft" id="dlCompare" style="margin-top:8px;width:100%">⬇️ ดาวน์โหลดรูปเปรียบเทียบ</button></div>`:''}
     ${t.detail?`<div class="meta-item" style="margin-bottom:14px"><div class="k">รายละเอียด</div><div class="v" style="font-weight:600;font-size:14px">${esc(t.detail)}</div></div>`:''}
     <div class="meta-grid">
       <div class="meta-item"><div class="k">หมวดหมู่</div><div class="v">${cat?esc(cat.name):'-'}</div></div>
+      <div class="meta-item"><div class="k">แผนก / เครื่อง</div><div class="v">${esc(t.dept||'-')}${t.machine?' · '+esc(t.machine):''}</div></div>
       <div class="meta-item"><div class="k">ผู้ส่งเรื่อง</div><div class="v">${opener?esc(opener.name):'-'}</div></div>
       <div class="meta-item"><div class="k">ครบกำหนด</div><div class="v" style="${ov?'color:var(--red)':''}">${fmtDate(t.dueDate)}${ov?' (เกิน)':''}</div></div>
       <div class="meta-item"><div class="k">${isClosed?'ปิดโดย':'สร้างเมื่อ'}</div><div class="v">${isClosed?(userById(t.closedBy)?esc(userById(t.closedBy).name.split(' ')[0]):'-'):fmtDate(t.createdAt)}</div></div>
     </div>
 
     ${canSubmit?`<div class="form-group">
-      <label>${t.after?'อัปเดต':'เพิ่ม'}รูป After (หลังแก้ไข)</label>
-      <div class="photo-pick ${afterU?'has':''}" id="pickAfter">${afterU?`<img src="${afterU}">`:`<div class="ph"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><b>ถ่าย/เลือกรูป After</b></div>`}
-        <input type="file" accept="image/*" id="fileAfter"></div>
-      <button class="btn btn-green" id="btnSubmit" style="margin-top:12px" ${t.after?'':'disabled'}>✓ บันทึกว่าแก้ไขเสร็จ</button>
+      <label>รูป After (หลังแก้ไข) — เพิ่มได้อีก <span id="aLeft">${Math.max(0,MAX_IMGS-aKeys.length)}</span> รูป</label>
+      <div id="aThumbs" class="pthumbs"></div>
+      <div class="btn-row" style="margin-top:10px">
+        <label class="btn btn-soft" style="flex:1;cursor:pointer">📷 ถ่ายรูป<input type="file" accept="image/*" capture="environment" id="camAfter" hidden></label>
+        <label class="btn btn-ghost" style="flex:1;cursor:pointer">🖼️ เลือกรูป<input type="file" accept="image/*" multiple id="fileAfter" hidden></label>
+      </div>
+      <button class="btn btn-green" id="btnSubmit" style="margin-top:12px" ${aKeys.length?'':'disabled'}>✓ บันทึกว่าแก้ไขเสร็จ</button>
     </div>`:''}
 
     ${isClosed?`<button class="btn btn-ghost" id="btnReopen" style="width:100%;margin-bottom:8px">↩︎ เปิดงานนี้ใหม่ (แก้ไขเพิ่ม)</button>`:''}
@@ -1180,27 +1302,47 @@ async function openTask(id){
   `);
 
   // download compare
-  const dl=$('#dlCompare'); if(dl) dl.onclick=async()=>{ const b=await IMG.getBlob(t.compare); if(!b)return;
+  const dl=$('#dlCompare'); if(dl) dl.onclick=async()=>{ const b=await IMG.getBlob(firstKey(t.compare)); if(!b)return;
     const u=URL.createObjectURL(b); const a2=document.createElement('a'); a2.href=u; a2.download=t.code+'_compare.jpg'; a2.click(); URL.revokeObjectURL(u); };
 
-  // เปลี่ยน/เพิ่มรูป Before & After
+  // dots ของแกลเลอรี
+  const gal=$('#gal'), galDots=$$('#galDots i');
+  if(gal&&galDots.length){ gal.addEventListener('scroll',()=>{ const i=Math.round(gal.scrollLeft/Math.max(1,gal.clientWidth));
+    galDots.forEach((d,j)=>d.classList.toggle('on',j===i)); },{passive:true}); }
+  // ลบรูปออกจากชุด
+  if(gal) gal.addEventListener('click',async e=>{ const b=e.target.closest('.gal-del'); if(!b) return;
+    e.stopPropagation();
+    if(!confirm('ลบรูปนี้?')) return;
+    try{ await DATA.removePhoto(t,b.dataset.which,b.dataset.key); openTask(id); toast('ลบรูปแล้ว','info'); }
+    catch(err){ toast('ลบไม่สำเร็จ','err'); } });
+  // เพิ่มรูปอีกมุม Before / After (เลือกได้หลายไฟล์)
   const wirePhoto=(inputId,which)=>{ const inp=$('#'+inputId); if(!inp) return;
-    inp.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f) return;
+    inp.addEventListener('change',async e=>{ const fs=[...e.target.files]; if(!fs.length) return;
       toast('กำลังบันทึกรูป...','info');
-      try{ const blob=await compressImage(f); await DATA.setPhoto(t,which,blob); openTask(id); toast('อัปเดตรูปแล้ว','ok'); }
+      try{ const blobs=[]; for(const f of fs) blobs.push(await compressImage(f));
+        await DATA.addPhotos(t,which,blobs); openTask(id); toast('เพิ่มรูปแล้ว','ok'); }
       catch(err){ toast('บันทึกรูปไม่สำเร็จ: '+err.message,'err'); } }); };
   wirePhoto('editBefore','before'); wirePhoto('editAfter','after');
 
-  // submit After
+  // submit After (สะสมได้หลายรูปก่อนกดบันทึก)
   if(canSubmit){
-    let pend=null; const pick=$('#pickAfter'), fa=$('#fileAfter'), bs=$('#btnSubmit');
-    fa.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f)return;
-      try{ pend=await compressImage(f); pick.classList.add('has');
-        pick.innerHTML=`<img src="${URL.createObjectURL(pend)}">`; bs.disabled=false;
-      }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } });
-    bs.onclick=async()=>{ if(!pend && !t.after){ toast('กรุณาเพิ่มรูป After','err'); return; }
+    let pendAfters=[]; const at=$('#aThumbs'), bs=$('#btnSubmit');
+    const left=()=>Math.max(0, MAX_IMGS - keyList(t.after).length - pendAfters.length);
+    const renderA=()=>{ $('#aLeft').textContent=left();
+      at.innerHTML=pendAfters.length?'':'<div class="pthumb-empty">ยังไม่มีรูปใหม่ — ถ่ายรูป หรือเลือกจากคลัง</div>';
+      pendAfters.forEach((b,i)=>{ const d=el(`<div class="pthumb"><img src="${URL.createObjectURL(b)}"><button type="button" class="pthumb-x">✕</button></div>`);
+        d.querySelector('.pthumb-x').onclick=()=>{ pendAfters.splice(i,1); renderA(); }; at.appendChild(d); });
+      bs.disabled = !(pendAfters.length || keyList(t.after).length); };
+    const onPickA=async(files)=>{ for(const f of [...files]){
+        if(left()<=0){ toast('ครบ '+MAX_IMGS+' รูปแล้ว','err'); break; }
+        try{ pendAfters.push(await compressImage(f)); }catch(err){ toast('โหลดรูปไม่สำเร็จ','err'); } }
+      renderA(); };
+    $('#camAfter').addEventListener('change',e=>{ onPickA(e.target.files); e.target.value=''; });
+    $('#fileAfter').addEventListener('change',e=>{ onPickA(e.target.files); e.target.value=''; });
+    renderA();
+    bs.onclick=async()=>{ if(!pendAfters.length && !keyList(t.after).length){ toast('กรุณาเพิ่มรูป After','err'); return; }
       bs.disabled=true; bs.innerHTML='<svg class="spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> กำลังส่ง...';
-      try{ await DATA.submitAfter(t, pend); closeModal(); toast('บันทึกว่าแก้ไขเสร็จแล้ว 🎉','ok'); go(current); }
+      try{ await DATA.submitAfter(t, pendAfters); closeModal(); toast('บันทึกว่าแก้ไขเสร็จแล้ว 🎉','ok'); go(current); }
       catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); bs.disabled=false; bs.innerHTML='✓ บันทึกว่าแก้ไขเสร็จ'; }
     };
   }
@@ -1223,7 +1365,7 @@ async function openTask(id){
 
 /* ---------- build Before|After comparison image (Canvas) ---------- */
 async function buildCompare(t){
-  const bb=await IMG.getBlob(t.before), ab=await IMG.getBlob(t.after);
+  const bb=await IMG.getBlob(firstKey(t.before)), ab=await IMG.getBlob(firstKey(t.after));
   if(!bb||!ab) return null;
   const [bi,ai]=await Promise.all([blobToImg(bb),blobToImg(ab)]);
   const W=1600, pad=24, header=120, gap=16, half=(W-pad*2-gap)/2;
@@ -1252,7 +1394,7 @@ async function buildCompare(t){
   x.fillStyle='rgba(255,255,255,.5)'; x.font='500 22px "Noto Sans Thai",sans-serif'; x.textBaseline='alphabetic';
   x.fillText('Before/After Work Tracking', pad, H-26);
   const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));
-  const id=uid(); await IMG.put(id,blob); t.compare=id; return id;
+  const id=uid(); await putPhoto(id,blob); t.compare=id; return id;
 }
 function blobToImg(blob){ return new Promise((res,rej)=>{ const i=new Image(); const u=URL.createObjectURL(blob);
   i.onload=()=>{URL.revokeObjectURL(u);res(i);}; i.onerror=rej; i.src=u; }); }
@@ -1359,8 +1501,8 @@ function desktopTable(arr){
     return `<tr>
       <td><b>${t.code}</b></td>
       <td class="rt-thumbs">
-        ${t.before?`<img data-img="${t.before}">`:'<span style="color:var(--text-3)">—</span>'}
-        ${t.after?`<img data-img="${t.after}">`:'<span style="color:var(--text-3)">—</span>'}
+        ${firstKey(t.before)?`<img data-img="${firstKey(t.before)}">`:'<span style="color:var(--text-3)">—</span>'}
+        ${firstKey(t.after)?`<img data-img="${firstKey(t.after)}">`:'<span style="color:var(--text-3)">—</span>'}
       </td>
       <td class="wrap">${esc(t.area)}</td>
       <td>${cat?esc(cat.name):'-'}</td>
@@ -1398,10 +1540,10 @@ async function api(path,opts={}){
 /* ---------- รายงานรวม (สรุปงานของ array) ---------- */
 function reportRows(arr){
   return arr.map(t=>{ const cat=catById(t.category),o=userById(t.createdBy),cl=userById(t.closedBy);
-    return [t.code,t.area,t.detail||'',cat?cat.name:'',stName(t.status),t.dueDate||'',
-      o?o.name:'',fmtDateTime(t.createdAt),cl?cl.name:'',t.closedAt?fmtDateTime(t.closedAt):'']; });
+    return [t.code,'','',t.dept||'VSM4',t.machine||'',t.area,cat?cat.name:'',stName(t.status),
+      fmtDate(t.dueDate),o?o.name:'',fmtDate(t.createdAt),t.closedAt?fmtDate(t.closedAt):'-']; });
 }
-const REPORT_HEAD=['รหัส','พื้นที่','รายละเอียด','หมวด','สถานะ','ครบกำหนด','ผู้ส่งเรื่อง','ส่งเมื่อ','ปิดโดย','ปิดเมื่อ'];
+const REPORT_HEAD=['รหัส','Before','After','แผนก','เครื่อง','พื้นที่ / รายการงาน','หมวด','สถานะ','ครบกำหนด','ผู้ส่งเรื่อง','ส่งเมื่อ','ปิดเมื่อ'];
 
 /* ---------- Excel .xlsx (self-contained, ไม่ใช้ไลบรารี) ---------- */
 function crc32(b){ let c; if(!crc32.t){ crc32.t=new Uint32Array(256);
@@ -1420,25 +1562,80 @@ function zipStore(files){ // [{name, data:Uint8Array}] -> Blob (zip, stored/no c
   const end=[0x50,0x4b,5,6,...u16(0),...u16(0),...u16(central.length),...u16(central.length),...u32(cdSize),...u32(offset),...u16(0)];
   return new Blob([...parts,...cd,new Uint8Array(end)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
-function exportXlsx(arr){
-  const rows=[REPORT_HEAD,...reportRows(arr)];
-  const cell=v=>`<c t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
-  const sheetData=rows.map((r,i)=>`<row r="${i+1}">${r.map(cell).join('')}</row>`).join('');
-  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${sheetData}</sheetData></worksheet>`;
-  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
+/* รูปย่อสำหรับฝังใน Excel (รูปแรกของช่อง) */
+async function xlsxThumb(key){
+  if(!key) return null;
+  let b=await IMG.getBlob('th-'+key); if(!b) b=await IMG.getBlob(key); if(!b) return null;
+  try{
+    const bmp=await createImageBitmap(b);
+    const sc=Math.min(150/bmp.width,100/bmp.height,1);
+    const w=Math.max(1,Math.round(bmp.width*sc)), h=Math.max(1,Math.round(bmp.height*sc));
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(bmp,0,0,w,h);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.8)); if(!blob) return null;
+    return { data:new Uint8Array(await blob.arrayBuffer()), w, h };
+  }catch(e){ return null; }
+}
+async function exportXlsx(arr){
+  toast('กำลังสร้าง Excel...','info');
+  const E=new TextEncoder(), EMU=9525, NC=REPORT_HEAD.length;
+  const colL=i=>String.fromCharCode(65+i);
+  const cell=(v,r,c2,s)=>`<c r="${colL(c2)}${r}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+  // เก็บรูปแรก Before + After ของแต่ละงาน (จำกัด 80 งานกัน xlsx บวม)
+  const media=[], anchors=[];
+  const withImg=arr.slice(0,80);
+  for(let i=0;i<withImg.length;i++){ const t2=withImg[i];
+    for(const [ci,k] of [[1,firstKey(t2.before)],[2,firstKey(t2.after)]]){
+      const im=await xlsxThumb(k); if(!im) continue;
+      const n=media.length+1; media.push(im);
+      anchors.push(`<xdr:oneCellAnchor><xdr:from><xdr:col>${ci}</xdr:col><xdr:colOff>${4*EMU}</xdr:colOff><xdr:row>${2+i}</xdr:row><xdr:rowOff>${4*EMU}</xdr:rowOff></xdr:from>`
+        +`<xdr:ext cx="${im.w*EMU}" cy="${im.h*EMU}"/>`
+        +`<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${n}" name="img${n}"/><xdr:cNvPicPr/></xdr:nvPicPr>`
+        +`<xdr:blipFill><a:blip r:embed="rId${n}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>`
+        +`<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${im.w*EMU}" cy="${im.h*EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>`
+        +`<xdr:clientData/></xdr:oneCellAnchor>`); } }
+  // แถวข้อมูล: แถว1 = ชื่อรายงาน, แถว2 = หัวตาราง, แถว3+ = งาน (สูง 80pt เผื่อรูป)
+  const title=`รายงานงานแก้ไข Before/After · ${fmtDateTime(new Date().toISOString())} · รวม ${arr.length} งาน`;
+  const dataRows=reportRows(arr);
+  let sheetData=`<row r="1" ht="30" customHeight="1">${cell(title,1,0,1)}</row>`;
+  sheetData+=`<row r="2" ht="22" customHeight="1">${REPORT_HEAD.map((h,c2)=>cell(h,2,c2,1)).join('')}</row>`;
+  dataRows.forEach((r,i)=>{ const rn=3+i, hasImg=i<withImg.length;
+    sheetData+=`<row r="${rn}"${hasImg?' ht="80" customHeight="1"':''}>${r.map((v,c2)=>cell(v,rn,c2,(c2===0||c2===3||c2===7)?3:2)).join('')}</row>`; });
+  const widths=[10,21,21,8,10,30,12,11,12,20,12,12];
+  const cols=`<cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`;
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${cols}<sheetData>${sheetData}</sheetData><mergeCells count="1"><mergeCell ref="A1:${colL(NC-1)}1"/></mergeCells>${media.length?'<drawing r:id="rId1"/>':''}</worksheet>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+    +`<fonts count="2"><font><sz val="11"/><name val="Tahoma"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Tahoma"/></font></fonts>`
+    +`<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1E3A8A"/><bgColor rgb="FF1E3A8A"/></patternFill></fill></fills>`
+    +`<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB9C4D4"/></left><right style="thin"><color rgb="FFB9C4D4"/></right><top style="thin"><color rgb="FFB9C4D4"/></top><bottom style="thin"><color rgb="FFB9C4D4"/></bottom><diagonal/></border></borders>`
+    +`<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`
+    +`<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`
+    +`<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>`
+    +`<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`
+    +`<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>`;
+  const drawing=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${anchors.join('')}</xdr:wsDr>`;
+  const drawRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${media.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i+1}.jpg"/>`).join('')}</Relationships>`;
+  const sheetRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${media.length?'<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>':''}</Types>`;
   const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
   const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Report" sheetId="1" r:id="rId1"/></sheets></workbook>`;
-  const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
-  const E=new TextEncoder();
+  const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
   const files=[
     {name:'[Content_Types].xml',data:E.encode(ct)},
     {name:'_rels/.rels',data:E.encode(rels)},
     {name:'xl/workbook.xml',data:E.encode(wb)},
     {name:'xl/_rels/workbook.xml.rels',data:E.encode(wbr)},
+    {name:'xl/styles.xml',data:E.encode(styles)},
     {name:'xl/worksheets/sheet1.xml',data:E.encode(sheet)},
   ];
+  if(media.length){
+    files.push({name:'xl/worksheets/_rels/sheet1.xml.rels',data:E.encode(sheetRels)});
+    files.push({name:'xl/drawings/drawing1.xml',data:E.encode(drawing)});
+    files.push({name:'xl/drawings/_rels/drawing1.xml.rels',data:E.encode(drawRels)});
+    media.forEach((m,i)=>files.push({name:'xl/media/image'+(i+1)+'.jpg',data:m.data}));
+  }
   downloadBlob(zipStore(files),'ba-report-'+todayISO()+'.xlsx');
-  toast('ดาวน์โหลด Excel แล้ว','ok');
+  toast('ดาวน์โหลด Excel (ฝังรูป '+media.length+' รูป) แล้ว','ok');
 }
 
 /* ---------- PDF / พิมพ์ (เรนเดอร์ไทยได้สมบูรณ์ผ่าน print ของเบราว์เซอร์) ---------- */
@@ -1448,7 +1645,7 @@ async function printReport(arr){
     closed=arr.filter(x=>x.status==='closed').length, over=arr.filter(isOverdue).length;
   const rowsHtml=await Promise.all(arr.map(async(t,i)=>{
     const cat=catById(t.category),o=userById(t.createdBy),cl=userById(t.closedBy);
-    const b=await IMG.url(t.before), af=await IMG.url(t.after);
+    const b=await IMG.url(firstKey(t.before)), af=await IMG.url(firstKey(t.after));   // รายงานใช้รูปแรกรูปเดียว
     return `<tr>
       <td>${i+1}</td><td><b>${t.code}</b></td>
       <td>${b?`<img src="${b}">`:'—'} ${af?`<img src="${af}">`:'—'}</td>
@@ -1518,6 +1715,22 @@ VIEWS.settings = (root)=>{
       <button class="btn btn-ghost" id="ln-test" style="width:100%">🧪 ทดสอบส่งข้อความ</button>
     </div>
 
+    <div class="section-title">แผนก &amp; หมายเลขเครื่อง</div>
+    <div class="card" style="padding:14px">
+      <div class="form-group"><label>แผนก (แตะ ✕ เพื่อลบ)</label>
+        <div id="deptTags" class="tagwrap"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input class="input" id="deptNew" placeholder="เพิ่มแผนก เช่น VSM5" style="flex:1">
+          <button class="btn btn-soft" id="deptAdd" style="padding:0 16px">เพิ่ม</button></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label>หมายเลขเครื่อง (โผล่เป็นตัวเลือกตอนเปิดงาน)</label>
+        <div id="mcTags" class="tagwrap"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input class="input" id="mcNew" placeholder="เพิ่มเครื่อง เช่น G-232" style="flex:1">
+          <button class="btn btn-soft" id="mcAdd" style="padding:0 16px">เพิ่ม</button></div>
+      </div>
+    </div>
+
     <div class="section-title">ทั่วไป</div>
     <div class="card" style="padding:8px">
       <div class="lrow"><div class="li-main"><b>โหมดธีม</b><span>สลับกลางวัน/กลางคืน</span></div>
@@ -1542,8 +1755,13 @@ VIEWS.settings = (root)=>{
         <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div>
       </div>
     </div>
-    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>
+    <div id="storeInfo" style="text-align:center;color:var(--text-3);font-size:12px;margin:14px 0 2px"></div>
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:6px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>
   `;
+  // พื้นที่จัดเก็บรูป (online)
+  if(!DEMO){ api('/api/storage').then(s=>{ const mb=(s.bytes/1048576).toFixed(1), pct=((s.bytes/s.quotaBytes)*100).toFixed(2);
+      const e2=$('#storeInfo',root); if(e2) e2.innerHTML=`🗄️ พื้นที่จัดเก็บรูป: <b>${mb} MB</b> (${s.count} ไฟล์ · ใช้ไป ${pct}% ของโควตาฟรี 10GB)`;
+    }).catch(()=>{}); }
   // users (collapsible + search)
   const ul=$('#userList',root);
   function renderUsers(q=''){
@@ -1587,6 +1805,24 @@ VIEWS.settings = (root)=>{
   // general
   $('#setTheme',root).onclick=()=>{ applyTheme(S.theme==='dark'?'light':'dark'); go('settings'); };
   $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
+  // แผนก & หมายเลขเครื่อง
+  const renderTags=(elId,list,onDel)=>{ const w=$('#'+elId,root); w.innerHTML='';
+    if(!list.length){ w.innerHTML='<span style="color:var(--text-3);font-size:13px">— ยังไม่มี —</span>'; return; }
+    list.forEach(v=>{ const tg=el(`<span class="tag-item">${esc(v)}<button type="button">✕</button></span>`);
+      tg.querySelector('button').onclick=()=>onDel(v); w.appendChild(tg); }); };
+  const drawDM=()=>{ renderTags('deptTags',S.depts||[],async v=>{
+      if(S.tasks.some(x=>(x.dept||'VSM4')===v)){ toast('มีงานใช้แผนกนี้อยู่ ลบไม่ได้','err'); return; }
+      if(!confirm('ลบแผนก '+v+'?')) return;
+      await DATA.saveConfig({departments:(S.depts||[]).filter(d=>d!==v)}); save(); drawDM(); });
+    renderTags('mcTags',S.machines||[],async v=>{ if(!confirm('ลบเครื่อง '+v+'?')) return;
+      await DATA.saveConfig({machines:(S.machines||[]).filter(m=>m!==v)}); save(); drawDM(); }); };
+  drawDM();
+  $('#deptAdd',root).onclick=async()=>{ const v=$('#deptNew',root).value.trim().toUpperCase(); if(!v) return;
+    if((S.depts||[]).includes(v)){ toast('มีแผนกนี้แล้ว','err'); return; }
+    await DATA.saveConfig({departments:[...(S.depts||[]),v]}); save(); $('#deptNew',root).value=''; drawDM(); toast('เพิ่มแผนกแล้ว','ok'); };
+  $('#mcAdd',root).onclick=async()=>{ const v=$('#mcNew',root).value.trim().toUpperCase(); if(!v) return;
+    if((S.machines||[]).includes(v)){ toast('มีเครื่องนี้แล้ว','err'); return; }
+    await DATA.saveConfig({machines:[...(S.machines||[]),v]}); save(); $('#mcNew',root).value=''; drawDM(); toast('เพิ่มเครื่องแล้ว','ok'); };
 };
 function editUser(id){
   const u=id?userById(id):{id:null,code:'',name:'',role:'staff',lineUserId:''};
@@ -1627,13 +1863,20 @@ function editCat(id){
 function editTaskForm(id){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
   openModal(`<h3>แก้ไขรายละเอียดงาน</h3><div class="sub">${t.code}</div>
-    <div class="form-group"><label>หมวดหมู่</label><select class="input" id="e-cat">${S.categories.map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="btn-row">
+      <div class="form-group" style="flex:1"><label>แผนก</label><select class="input" id="e-dept">${(S.depts||[]).map(d=>`<option value="${esc(d)}" ${(t.dept||'VSM4')===d?'selected':''}>${esc(d)}</option>`).join('')}</select></div>
+      <div class="form-group" style="flex:1"><label>หมวดหมู่</label><select class="input" id="e-cat">${S.categories.map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    </div>
     <div class="form-group"><label>พื้นที่ / ชื่อรายการงาน</label><input class="input" id="e-area" value="${esc(t.area)}"></div>
+    <div class="btn-row">
+      <div class="form-group" style="flex:1"><label>หมายเลขเครื่อง</label><input class="input" id="e-machine" list="machineList2" value="${esc(t.machine||'')}"><datalist id="machineList2">${(S.machines||[]).map(m=>`<option value="${esc(m)}">`).join('')}</datalist></div>
+      <div class="form-group" style="flex:1"><label>วันครบกำหนด</label><input class="input" type="date" id="e-due" value="${t.dueDate||''}"></div>
+    </div>
     <div class="form-group"><label>รายละเอียด</label><textarea class="input" id="e-detail">${esc(t.detail||'')}</textarea></div>
-    <div class="form-group"><label>วันครบกำหนด</label><input class="input" type="date" id="e-due" value="${t.dueDate||''}"></div>
     <button class="btn btn-fill" id="saveEdit" style="width:100%">บันทึก</button>`);
   $('#saveEdit').onclick=async()=>{ const area=$('#e-area').value.trim(); if(!area){ toast('กรอกพื้นที่/ชื่องาน','err'); return; }
     try{ await DATA.editTask(t,{ category:$('#e-cat').value, area, detail:$('#e-detail').value.trim(),
+        dept:$('#e-dept').value, machine:$('#e-machine').value.trim(),
         dueDate:$('#e-due').value });
       toast('บันทึกแล้ว','ok'); openTask(id); }
     catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };

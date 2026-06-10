@@ -57,6 +57,15 @@ export default {
       const mC = pathname.match(/^\/api\/categories\/([^/]+)$/);
       if (mC && req.method === 'DELETE') return json(await del('categories', mC[1], env), 200, cors);
 
+      // ---- app config (แผนก/หมายเลขเครื่อง) ----
+      if (pathname === '/api/config') {
+        if (req.method === 'GET')  return json(await getAppConfig(env), 200, cors);
+        if (req.method === 'POST') return json(await setAppConfig(await req.json(), env), 200, cors);
+      }
+      // ---- พื้นที่จัดเก็บ R2 ----
+      if (pathname === '/api/storage' && req.method === 'GET')
+        return json(await storageInfo(env), 200, cors);
+
       // ---- LINE settings + push ----
       if (pathname === '/api/line/config') {
         if (req.method === 'GET')  return json(await lineConfig(env), 200, cors);
@@ -99,6 +108,7 @@ const rowCat  = (c) => ({ id: c.id, name: c.name, color: c.color });
 function rowTask(t, logs) {
   return {
     id: t.id, code: t.code, category: t.category_id, area: t.area, detail: t.detail,
+    dept: t.dept || 'VSM4', machine: t.machine || '',
     assigneeId: t.assignee_id, createdBy: t.created_by, dueDate: t.due_date, status: t.status,
     before: t.before_key, after: t.after_key, compare: t.compare_key,
     createdAt: t.created_at, submittedAt: t.submitted_at, closedAt: t.closed_at, closedBy: t.closed_by,
@@ -112,12 +122,26 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 
 /* ----------------------------- bootstrap ----------------------------- */
 async function bootstrap(env) {
-  const [users, cats, tasks] = await Promise.all([
+  const [users, cats, tasks, cfg] = await Promise.all([
     env.DB.prepare('SELECT * FROM users ORDER BY name').all(),
     env.DB.prepare('SELECT * FROM categories ORDER BY name').all(),
     listTasks(env),
+    getAppConfig(env),
   ]);
-  return { users: users.results.map(rowUser), categories: cats.results.map(rowCat), tasks };
+  return { users: users.results.map(rowUser), categories: cats.results.map(rowCat), tasks,
+    departments: cfg.departments, machines: cfg.machines };
+}
+async function getAppConfig(env) {
+  const rows = await env.DB.prepare("SELECT key,value FROM app_config WHERE key IN ('departments','machines')").all();
+  const m = Object.fromEntries(rows.results.map(r => [r.key, r.value]));
+  const parse = (s, d) => { try { const v = JSON.parse(s); return Array.isArray(v) ? v : d; } catch (e) { return d; } };
+  return { departments: parse(m.departments, ['VSM1','VSM2','VSM3','VSM4','QC']), machines: parse(m.machines, []) };
+}
+async function setAppConfig(b, env) {
+  for (const k of ['departments','machines']) if (k in b && Array.isArray(b[k]))
+    await env.DB.prepare('INSERT INTO app_config (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')
+      .bind(k, JSON.stringify(b[k])).run();
+  return { ok: true };
 }
 
 /* ----------------------------- tasks ----------------------------- */
@@ -136,9 +160,9 @@ async function nextCode(env) {
 }
 async function createTask(b, env) {
   const id = newId(), code = await nextCode(env), at = new Date().toISOString();
-  await env.DB.prepare(`INSERT INTO tasks (id,code,category_id,area,detail,assignee_id,created_by,due_date,status,before_key,created_at)
-    VALUES (?,?,?,?,?,?,?,?, 'open', ?, ?)`)
-    .bind(id, code, b.category, b.area, b.detail || '', b.assigneeId || null, b.createdBy || null, b.dueDate || null, b.before || null, at).run();
+  await env.DB.prepare(`INSERT INTO tasks (id,code,category_id,area,detail,dept,machine,assignee_id,created_by,due_date,status,before_key,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?, 'open', ?, ?)`)
+    .bind(id, code, b.category, b.area, b.detail || '', b.dept || 'VSM4', b.machine || '', b.assigneeId || null, b.createdBy || null, b.dueDate || null, b.before || null, at).run();
   await addLog(env, id, 'open', b.createdBy, b.createdByName);
   return { id, code };
 }
@@ -146,9 +170,10 @@ async function updateTask(id, b, env) {
   const t = await env.DB.prepare('SELECT * FROM tasks WHERE id=?').bind(id).first();
   if (!t) return { error: 'not found' };
   const fields = [], vals = [];
-  const map = { after: 'after_key', compare: 'compare_key', status: 'status',
+  const map = { before: 'before_key', after: 'after_key', compare: 'compare_key', status: 'status',
     submittedAt: 'submitted_at', closedAt: 'closed_at', closedBy: 'closed_by',
-    area: 'area', detail: 'detail', assigneeId: 'assignee_id', dueDate: 'due_date', category: 'category_id' };
+    area: 'area', detail: 'detail', dept: 'dept', machine: 'machine',
+    assigneeId: 'assignee_id', dueDate: 'due_date', category: 'category_id' };
   for (const k in map) if (k in b) { fields.push(`${map[k]}=?`); vals.push(b[k]); }
   if (fields.length) { vals.push(id); await env.DB.prepare(`UPDATE tasks SET ${fields.join(',')} WHERE id=?`).bind(...vals).run(); }
   if (b._log) await addLog(env, id, b._log, b._userId, b._userName);
@@ -161,7 +186,11 @@ async function updateTask(id, b, env) {
 }
 async function deleteTask(id, env) {
   const t = await env.DB.prepare('SELECT * FROM tasks WHERE id=?').bind(id).first();
-  if (t) for (const k of [t.before_key, t.after_key, t.compare_key]) if (k) await env.IMAGES.delete(k).catch(() => {});
+  if (t) for (const field of [t.before_key, t.after_key, t.compare_key])
+    for (const k of String(field || '').split(',').filter(Boolean)) {   // รองรับหลายรูปต่อช่อง (คั่นจุลภาค)
+      await env.IMAGES.delete(k).catch(() => {});
+      await env.IMAGES.delete('th-' + k).catch(() => {});               // ลบ thumbnail ด้วย
+    }
   await env.DB.prepare('DELETE FROM task_logs WHERE task_id=?').bind(id).run();
   await env.DB.prepare('DELETE FROM tasks WHERE id=?').bind(id).run();
   return { ok: true };
@@ -188,6 +217,18 @@ async function upsertCat(b, env) {
   return { id };
 }
 async function del(table, id, env) { await env.DB.prepare(`DELETE FROM ${table} WHERE id=?`).bind(id).run(); return { ok: true }; }
+
+/* ----------------------------- storage info ----------------------------- */
+async function storageInfo(env) {
+  let count = 0, bytes = 0, cursor = undefined;
+  for (let i = 0; i < 20; i++) {                       // สูงสุด 20,000 objects
+    const page = await env.IMAGES.list({ limit: 1000, cursor });
+    for (const o of page.objects) { count++; bytes += o.size || 0; }
+    if (!page.truncated) break;
+    cursor = page.cursor;
+  }
+  return { count, bytes, quotaBytes: 10 * 1024 * 1024 * 1024 };  // ฟรี 10GB
+}
 
 /* ----------------------------- R2 images ----------------------------- */
 async function putImage(key, req, env) {

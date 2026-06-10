@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   category_id  TEXT,
   area         TEXT NOT NULL,
   detail       TEXT,
+  dept         TEXT DEFAULT 'VSM4',          -- แผนก (VSM1-4, QC, ...)
+  machine      TEXT DEFAULT '',              -- หมายเลขเครื่อง
   assignee_id  TEXT,
   created_by   TEXT,
   due_date     TEXT,                         -- YYYY-MM-DD
