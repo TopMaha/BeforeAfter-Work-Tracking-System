@@ -1,7 +1,6 @@
 /* =========================================================================
-   Before/After Work Tracking — Cloudflare Worker (API + R2 + LINE)
+   Before/After Work Tracking — Cloudflare Worker (API + R2)
    Bindings (ดู wrangler.toml): DB (D1), IMAGES (R2)
-   Secrets: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, ADMIN_PIN
    -------------------------------------------------------------------------
    หมายเหตุ: ฝั่ง frontend ตั้ง CONFIG.API_BASE = URL ของ Worker นี้
    ========================================================================= */
@@ -15,10 +14,6 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
 
     try {
-      // ---- LINE webhook (รับ event: join/message เก็บ groupId & userId) ----
-      if (pathname === '/api/line/webhook' && req.method === 'POST')
-        return await lineWebhook(req, env);
-
       // ---- รูปภาพจาก R2 ----
       if (pathname.startsWith('/api/img/')) {
         if (req.method === 'GET')  return await getImage(pathname.slice(9), env, cors);
@@ -65,22 +60,6 @@ export default {
       // ---- พื้นที่จัดเก็บ R2 ----
       if (pathname === '/api/storage' && req.method === 'GET')
         return json(await storageInfo(env), 200, cors);
-
-      // ---- LINE settings + push ----
-      if (pathname === '/api/line/config') {
-        if (req.method === 'GET')  return json(await lineConfig(env), 200, cors);
-        if (req.method === 'POST') return json(await setLineConfig(await req.json(), env), 200, cors);
-      }
-      if (pathname === '/api/line/test' && req.method === 'POST')
-        return json(await lineTest(env), 200, cors);
-      if (pathname === '/api/line/push' && req.method === 'POST') {
-        const { text } = await req.json();
-        const cfg = await lineConfig(env);
-        if (!cfg.groupId) return json({ error: 'ยังไม่มี Group ID' }, 200, cors);
-        return json(await linePush(env, cfg.groupId, [{ type: 'text', text: String(text || '').slice(0, 4900) }]), 200, cors);
-      }
-      if (pathname === '/api/line/notify' && req.method === 'POST')
-        return json(await lineNotifyTask((await req.json()).taskId, env), 200, cors);
 
       // ---- ไม่ใช่ API → เสิร์ฟไฟล์ static (index.html/PWA) ----
       if (!pathname.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(req);
@@ -177,11 +156,6 @@ async function updateTask(id, b, env) {
   for (const k in map) if (k in b) { fields.push(`${map[k]}=?`); vals.push(b[k]); }
   if (fields.length) { vals.push(id); await env.DB.prepare(`UPDATE tasks SET ${fields.join(',')} WHERE id=?`).bind(...vals).run(); }
   if (b._log) await addLog(env, id, b._log, b._userId, b._userName);
-  // แจ้ง LINE เมื่อปิดงาน
-  if (b.status === 'closed') {
-    const cfg = await lineConfig(env);
-    if (cfg.notify) await lineNotifyTask(id, env).catch(() => {});
-  }
   return { ok: true };
 }
 async function deleteTask(id, env) {
@@ -242,93 +216,4 @@ async function getImage(key, env, cors) {
     headers: { 'Content-Type': obj.httpMetadata?.contentType || 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable', ...cors },
   });
-}
-
-/* ----------------------------- LINE ----------------------------- */
-async function lineConfig(env) {
-  const rows = await env.DB.prepare("SELECT key,value FROM app_config WHERE key IN ('line_group_id','notify_on_close')").all();
-  const m = Object.fromEntries(rows.results.map(r => [r.key, r.value]));
-  const groups = await env.DB.prepare('SELECT * FROM line_groups ORDER BY seen_at DESC').all();
-  return { groupId: m.line_group_id || '', notify: m.notify_on_close !== '0', groups: groups.results };
-}
-async function setLineConfig(b, env) {
-  if ('groupId' in b) await env.DB.prepare("UPDATE app_config SET value=? WHERE key='line_group_id'").bind(b.groupId || '').run();
-  if ('notify' in b) await env.DB.prepare("UPDATE app_config SET value=? WHERE key='notify_on_close'").bind(b.notify ? '1' : '0').run();
-  return { ok: true };
-}
-
-/* รับ webhook: เก็บ groupId (join/message) + userId ของสมาชิก */
-async function lineWebhook(req, env) {
-  const bodyText = await req.text();
-  // (แนะนำ) ตรวจ signature ด้วย LINE_CHANNEL_SECRET ก่อนใช้งานจริง
-  const valid = await verifyLineSignature(bodyText, req.headers.get('x-line-signature'), env);
-  if (!valid) return new Response('bad signature', { status: 403 });
-  const body = JSON.parse(bodyText);
-  for (const ev of body.events || []) {
-    const gid = ev.source?.groupId;
-    if (gid) {
-      await env.DB.prepare('INSERT OR IGNORE INTO line_groups (group_id,name) VALUES (?,?)').bind(gid, 'LINE Group').run();
-      // ตั้งกลุ่มแรกที่เจอเป็นปลายทางอัตโนมัติ ถ้ายังไม่มี
-      const cur = await env.DB.prepare("SELECT value FROM app_config WHERE key='line_group_id'").first();
-      if (!cur?.value) await env.DB.prepare("UPDATE app_config SET value=? WHERE key='line_group_id'").bind(gid).run();
-    }
-    const uid = ev.source?.userId;
-    if (uid && ev.type === 'message') {
-      // ผูก userId กับผู้ใช้ที่ยังไม่มี line_user_id (จับคู่ตอนพิมพ์รหัสในกลุ่ม เช่น "ผูก 1234")
-      const text = ev.message?.text || '';
-      const m = text.match(/ผูก\s*(\S+)/);
-      if (m) await env.DB.prepare('UPDATE users SET line_user_id=? WHERE code=?').bind(uid, m[1]).run();
-    }
-  }
-  return new Response('OK');
-}
-async function verifyLineSignature(body, signature, env) {
-  if (!env.LINE_CHANNEL_SECRET) return true; // ยังไม่ตั้ง secret = ข้าม (เฉพาะตอนทดสอบ)
-  if (!signature) return false;
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.LINE_CHANNEL_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(sig)));
-  return b64 === signature;
-}
-
-async function linePush(env, to, messages) {
-  if (!env.LINE_CHANNEL_ACCESS_TOKEN) return { error: 'no token' };
-  const res = await fetch('https://api.line.me/v2/bot/message/push', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.LINE_CHANNEL_ACCESS_TOKEN },
-    body: JSON.stringify({ to, messages }),
-  });
-  return { status: res.status, body: await res.text() };
-}
-async function lineTest(env) {
-  const cfg = await lineConfig(env);
-  if (!cfg.groupId) return { error: 'ยังไม่มี Group ID' };
-  return await linePush(env, cfg.groupId, [{ type: 'text', text: '✅ ทดสอบการเชื่อมต่อ Before/After Work Tracking สำเร็จ' }]);
-}
-async function lineNotifyTask(taskId, env) {
-  const cfg = await lineConfig(env);
-  if (!cfg.groupId) return { error: 'no group' };
-  const t = await env.DB.prepare('SELECT * FROM tasks WHERE id=?').bind(taskId).first();
-  if (!t) return { error: 'no task' };
-  const cat = t.category_id ? await env.DB.prepare('SELECT name FROM categories WHERE id=?').bind(t.category_id).first() : null;
-  const assignee = t.assignee_id ? await env.DB.prepare('SELECT name,line_user_id FROM users WHERE id=?').bind(t.assignee_id).first() : null;
-  const base = `${new URL('/', 'https://' + (env.WORKER_HOST || 'ba-track.workers.dev'))}`; // ใช้ public URL จริงของรูปถ้ามี
-  const messages = [];
-
-  // ข้อความ + @mention ผู้รับผิดชอบ (ถ้ามี line_user_id)
-  let text = `🟢 ปิดงาน ${t.code}\n📍 ${t.area}\n🏷️ ${cat?.name || '-'}\n✅ สถานะ: ปิดงานเรียบร้อย`;
-  const msg = { type: 'text', text };
-  if (assignee?.line_user_id) {
-    msg.text = `@${assignee.name} \n` + text;
-    msg.mention = { mentionees: [{ index: 0, length: assignee.name.length + 1, userId: assignee.line_user_id }] };
-  }
-  messages.push(msg);
-
-  // รูปเปรียบเทียบ (ต้องเป็น https สาธารณะ — แนะนำเปิด R2 public หรือ custom domain)
-  if (t.compare_key && env.PUBLIC_IMG_BASE) {
-    const u = env.PUBLIC_IMG_BASE.replace(/\/$/, '') + '/' + t.compare_key;
-    messages.push({ type: 'image', originalContentUrl: u, previewImageUrl: u });
-  }
-  return await linePush(env, cfg.groupId, messages);
 }
