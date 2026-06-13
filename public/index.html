@@ -351,27 +351,36 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nav-btn:active svg{transform:scale(.85)}
 .nav-btn.active:active svg{transform:translateY(-24px) scale(.98)}
 
-/* ============================ 3D COVERFLOW (dashboard) ============================ */
-.coverflow{position:relative;perspective:1100px;overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;padding:10px 0 6px;margin:0 -16px}
-.coverflow::-webkit-scrollbar{display:none}
-.cf-track{display:flex;align-items:center;width:max-content;
-  padding:0 calc(50vw - 122px);transform-style:preserve-3d}
-.cf-card{flex:0 0 224px;width:224px;margin:0 -8px;cursor:pointer;touch-action:manipulation;
-  transform-style:preserve-3d;will-change:transform,opacity}
+/* ============================ STACKED CAROUSEL (deck) ============================ */
+.carousel{position:relative;height:300px;perspective:1200px;margin:6px 0 2px;touch-action:pan-y;outline:none}
+.carousel-stage{position:absolute;inset:0;transform-style:preserve-3d}
+.cf-card{position:absolute;top:14px;left:50%;width:232px;margin-left:-116px;cursor:pointer;
+  transform-style:preserve-3d;will-change:transform,opacity;
+  transition:transform .45s var(--ease),opacity .4s var(--ease)}
 .cf-img{position:relative;border-radius:18px;overflow:hidden;background:var(--surface-3);border:1px solid var(--border);
   box-shadow:0 18px 40px rgba(15,40,90,.28);aspect-ratio:4/3}
+.cf-card.cz-active .cf-img{box-shadow:0 26px 54px rgba(15,40,90,.42);border-color:var(--primary)}
 .cf-img img{width:100%;height:100%;object-fit:cover;display:block}
 .cf-img .cf-ph{width:100%;height:100%;display:grid;place-items:center;color:var(--text-3);font-size:13px;font-weight:700}
 .cf-badge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;color:#fff}
-.cf-open{position:absolute;bottom:8px;right:8px;display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;
+.cf-open{position:absolute;bottom:8px;right:8px;display:none;align-items:center;gap:3px;font-size:10.5px;font-weight:800;
   padding:4px 8px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(3px)}
+.cf-card.cz-active .cf-open{display:inline-flex}     /* แสดง "ดู/แก้ไข" เฉพาะใบกลาง */
 .cf-count{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;
   background:rgba(0,0,0,.55);color:#fff}
-.cf-cap{margin-top:8px;text-align:center;padding:0 8px}
+.cf-cap{margin-top:8px;text-align:center;padding:0 8px;opacity:0;transition:opacity .3s}
+.cf-card.cz-active .cf-cap{opacity:1}                /* ชื่อโชว์เฉพาะใบกลาง */
 .cf-cap b{font-size:12px;color:var(--primary)}
-.cf-cap span{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cf-empty{flex:0 0 100%;text-align:center;color:var(--text-3);font-weight:700;padding:46px 16px}
+.cf-cap span{display:block;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ปุ่มลูกศร ‹ › */
+.cz-arrow{position:absolute;top:96px;z-index:120;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);color:var(--text-2);
+  font-size:22px;font-weight:700;line-height:1;transition:transform .15s,opacity .2s}
+.cz-arrow:active{transform:scale(.88)}
+.cz-arrow[disabled]{opacity:.35;pointer-events:none}
+.cz-prev{left:6px} .cz-next{right:6px}
+.cz-counter{text-align:center;font-size:12.5px;font-weight:700;color:var(--text-2);margin-top:2px}
+.cf-empty{text-align:center;color:var(--text-3);font-weight:700;padding:46px 16px}
 
 /* ============================ MODAL ============================ */
 .modal-back{position:fixed;inset:0;z-index:70;background:rgba(8,15,30,.55);backdrop-filter:blur(4px);
@@ -560,7 +569,7 @@ const CONFIG = {
 /* ออนไลน์อัตโนมัติเมื่อเปิดผ่าน Worker — กันเหตุ API_BASE ว่างแล้วเว็บจริงกลายเป็น Demo
    (เปิดจาก localhost/ไฟล์ตรง = Demo ตามเดิม) */
 if(!CONFIG.API_BASE && /\.workers\.dev$/i.test(location.hostname)) CONFIG.API_BASE = location.origin;
-const APP_VER = "v28";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v29";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -994,8 +1003,8 @@ VIEWS.dashboard = (root)=>{
       </select>
     </div>
     <div class="section-title" id="cfTitle" style="margin:18px 4px 2px"></div>
-    <div class="coverflow" id="coverflow"><div class="cf-track" id="cfTrack"></div></div>
-    <div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดเพื่อดู/แก้ไขรายละเอียด · ปัดเพื่อเลื่อน</div>
+    <div id="carHost"></div>
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดกลางเพื่อดู/แก้ไข · ปัด หรือกดลูกศรเพื่อเลื่อน</div>
 
     <div class="section-title" style="margin:22px 4px 8px">สรุป &amp; ส่งออก</div>
     <div class="card">
@@ -1014,16 +1023,9 @@ VIEWS.dashboard = (root)=>{
       </div>
     </div>`;
   const statEls=$$('#statFilters .stat',root);
-  const cfTitle=$('#cfTitle',root), cf=$('#coverflow',root), track=$('#cfTrack',root);
+  const cfTitle=$('#cfTitle',root), carHost=$('#carHost',root);
   const LBL={open:'รอแก้ไข',closed:'เสร็จแล้ว',overdue:'เกินกำหนด',all:'ทั้งหมด'};
   const applyActive=()=>statEls.forEach(s=>s.classList.toggle('stat-active',s.dataset.filter===DASH.status));
-  const pad=()=>{ const p=Math.max(12,(cf.clientWidth-224)/2); track.style.paddingLeft=p+'px'; track.style.paddingRight=p+'px'; };
-  const upd=()=>{ const center=cf.scrollLeft+cf.clientWidth/2;
-    [...track.children].forEach(card=>{ if(!card.classList.contains('cf-card'))return;
-      const cc=card.offsetLeft+card.offsetWidth/2, c=Math.max(-1.3,Math.min(1.3,(cc-center)/cf.clientWidth));
-      const rot=c*-42, sc=1-Math.min(0.36,Math.abs(c)*0.36), tz=-Math.abs(c)*150, op=1-Math.min(0.62,Math.abs(c)*0.62);
-      card.style.transform=`translateZ(${tz}px) rotateY(${rot}deg) scale(${sc})`;
-      card.style.opacity=op.toFixed(3); card.style.zIndex=String(200-Math.round(Math.abs(c)*100)); }); };
   const baseFiltered=()=>{    // กรองทุกอย่าง "ยกเว้นหมวด" (ใช้วาดกราฟหมวดให้กดสลับได้)
     let arr=t.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     if(DASH.status==='overdue') arr=arr.filter(isOverdue);
@@ -1051,36 +1053,9 @@ VIEWS.dashboard = (root)=>{
     const catNm=DASH.cat!=='all'&&catById(DASH.cat)?` · ${catById(DASH.cat).name}`:'';
     const deptNm=DASH.dept!=='all'?` · ${DASH.dept}`:'';
     cfTitle.textContent=`${LBL[DASH.status]||''}${catNm}${deptNm} (${arr.length})`;
-    if(!arr.length){ track.style.padding='0'; track.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; }
-    else { track.innerHTML=arr.map(cfCard).join(''); pad(); hydrateAll(track);
-      cf.scrollLeft=0; requestAnimationFrame(upd); setTimeout(upd,140); setTimeout(upd,420); }
+    mountCarousel(carHost, arr, openTask);
     renderSummary();
   }
-  // snap เองใน JS (CSS scroll-snap + transform 3D ทำให้เด้งวนเองตอนสุดรายการ)
-  let snapT=null, snapUntil=0;
-  cf.addEventListener('scroll',()=>{ requestAnimationFrame(upd);
-    if(Date.now()<snapUntil) return;            // กำลัง snap อยู่ ไม่สั่งซ้ำ
-    clearTimeout(snapT);
-    snapT=setTimeout(()=>{ const c=centeredCard(); if(!c) return;
-      const max=Math.max(0,cf.scrollWidth-cf.clientWidth);
-      let target=c.offsetLeft+c.offsetWidth/2-cf.clientWidth/2;
-      target=Math.max(0,Math.min(max,target));
-      if(Math.abs(target-cf.scrollLeft)<3) return;
-      snapUntil=Date.now()+800;
-      cf.scrollTo({left:target,behavior:'smooth'});
-    },150);
-  },{passive:true});
-  window.addEventListener('resize',()=>{ pad(); upd(); });
-  // เปิดรายละเอียด: แตะ coverflow = เปิด "การ์ดที่อยู่ตรงกลาง" (เลี่ยงปัญหา hit-test ของ transform 3D)
-  let _o=0; const openId=(id)=>{ if(!id)return; const now=Date.now(); if(now-_o<450)return; _o=now; openTask(id); };
-  const centeredCard=()=>{ const center=cf.scrollLeft+cf.clientWidth/2; let best=null,bd=1e9;
-    [...track.children].forEach(c=>{ if(!(c.classList&&c.classList.contains('cf-card')))return;
-      const cc=c.offsetLeft+c.offsetWidth/2, d=Math.abs(cc-center); if(d<bd){bd=d;best=c;} }); return best; };
-  let tx=0,ty=0,moved=false;
-  cf.addEventListener('touchstart',e=>{ const t2=e.touches[0]; tx=t2.clientX; ty=t2.clientY; moved=false; },{passive:true});
-  cf.addEventListener('touchmove',e=>{ const t2=e.touches[0]; if(Math.abs(t2.clientX-tx)>10||Math.abs(t2.clientY-ty)>10) moved=true; },{passive:true});
-  cf.addEventListener('touchend',(e)=>{ if(moved)return; const c=centeredCard(); if(c){ e.preventDefault(); openId(c.dataset.id); } });
-  cf.addEventListener('click',()=>{ const c=centeredCard(); if(c) openId(c.dataset.id); });
   statEls.forEach(s=> s.onclick=()=>{ DASH.status=s.dataset.filter; applyActive(); render(); });
   $('#dq',root).addEventListener('input',e=>{ DASH.q=e.target.value; render(); });
   $('#ddept',root).addEventListener('change',e=>{ DASH.dept=e.target.value; render(); });
@@ -1090,11 +1065,51 @@ VIEWS.dashboard = (root)=>{
   $('#dPdf',root).onclick=()=>printReport(getFiltered());
   applyActive(); render();
 };
-function cfCard(t){
+
+/* ---------- Stacked Carousel (deck) — ใช้ทั้งหน้าหลัก + โปรไฟล์ ---------- */
+function mountCarousel(host, tasks, onOpen){
+  if(!tasks.length){ host.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; return; }
+  let idx=0;
+  host.innerHTML=`<div class="carousel" tabindex="0">
+      <div class="carousel-stage"></div>
+      <button type="button" class="cz-arrow cz-prev" aria-label="ก่อนหน้า">‹</button>
+      <button type="button" class="cz-arrow cz-next" aria-label="ถัดไป">›</button>
+    </div><div class="cz-counter"></div>`;
+  const car=host.querySelector('.carousel'), stage=host.querySelector('.carousel-stage'),
+        counter=host.querySelector('.cz-counter'),
+        prev=host.querySelector('.cz-prev'), next=host.querySelector('.cz-next');
+  stage.innerHTML=tasks.map((t,i)=>cfCard(t,i)).join('');
+  hydrateAll(stage);
+  const cards=[...stage.children];
+  function upd(){
+    cards.forEach((c,i)=>{ const o=i-idx, a=Math.abs(o);
+      if(a>2){ c.style.opacity='0'; c.style.pointerEvents='none'; c.style.transform=`translateX(${o<0?-150:150}px) scale(.5)`; c.style.zIndex='0'; c.classList.remove('cz-active'); return; }
+      c.style.pointerEvents='auto';
+      const tx=o*112, sc=1-a*0.18, rot=-o*22, tz=-a*130, op=1-a*0.26;
+      c.style.transform=`translateX(${tx}px) translateZ(${tz}px) rotateY(${rot}deg) scale(${sc.toFixed(3)})`;
+      c.style.opacity=op.toFixed(2); c.style.zIndex=String(100-a); c.classList.toggle('cz-active',o===0); });
+    counter.textContent=`${idx+1} / ${tasks.length}`;
+    prev.disabled=idx<=0; next.disabled=idx>=tasks.length-1;
+  }
+  const go2=(n)=>{ idx=Math.max(0,Math.min(tasks.length-1,n)); upd(); };
+  prev.onclick=()=>go2(idx-1); next.onclick=()=>go2(idx+1);
+  let sx=0,sy=0,sw=false;
+  stage.addEventListener('click',e=>{ if(sw)return; const c=e.target.closest('.cf-card'); if(!c)return;
+    const i=+c.dataset.idx; if(i===idx) onOpen(tasks[idx].id); else go2(i); });
+  car.addEventListener('touchstart',e=>{ const tt=e.touches[0]; sx=tt.clientX; sy=tt.clientY; sw=false; },{passive:true});
+  car.addEventListener('touchmove',e=>{ const tt=e.touches[0]; if(Math.abs(tt.clientX-sx)>8||Math.abs(tt.clientY-sy)>8) sw=true; },{passive:true});
+  car.addEventListener('touchend',e=>{ const tt=e.changedTouches[0], dx=tt.clientX-sx, dy=tt.clientY-sy;
+    if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)){ dx<0?go2(idx+1):go2(idx-1); }
+    setTimeout(()=>{ sw=false; },50); },{passive:true});
+  car.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft')go2(idx-1); else if(e.key==='ArrowRight')go2(idx+1);
+    else if(e.key==='Enter')onOpen(tasks[idx].id); });
+  upd();
+}
+function cfCard(t,i){
   const img=firstKey(t.compare)||firstKey(t.before)||firstKey(t.after);   // การ์ดแสดงรูปแรกรูปเดียว
   const nImg=keyList(t.before).length+keyList(t.after).length;
   const bg=t.status==='closed'?'#16a34a':(isOverdue(t)?'#dc2626':'#f59e0b');
-  return `<div class="cf-card" data-id="${t.id}" role="button" tabindex="0">
+  return `<div class="cf-card" data-id="${t.id}" data-idx="${i}" role="button" tabindex="-1">
     <div class="cf-img">${img?`<img data-img="${img}" style="opacity:0;transition:opacity .35s">`:`<div class="cf-ph">ไม่มีรูป</div>`}
       <span class="cf-badge" style="background:${bg}">${stName(t.status)}</span>
       ${nImg>1?`<span class="cf-count">🖼 ${nImg}</span>`:''}
@@ -1705,11 +1720,10 @@ VIEWS.profile = (root)=>{
       ${statCard('s-overdue',over,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>')}
     </div>
     <div class="section-title">รายการที่ฉันส่ง (${mine.length})</div>
-    <div id="myList"></div>`;
-  const host=$('#myList',root);
-  if(!sorted.length) host.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ยังไม่มีรายการที่คุณส่ง</b><div style="font-size:13px">กดปุ่ม + เปิดงานใหม่</div></div>`));
-  else sorted.forEach(t=>host.appendChild(taskCard(t)));
-  hydrateAll(host);
+    <div id="myCar"></div>
+    ${sorted.length?'<div style="text-align:center;color:var(--text-3);font-size:12px;margin-top:2px">แตะการ์ดกลางเพื่อดู/แก้ไข · ปัด หรือกดลูกศรเพื่อเลื่อน</div>':''}`;
+  if(!sorted.length) $('#myCar',root).innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ยังไม่มีรายการที่คุณส่ง</b><div style="font-size:13px">กดปุ่ม + เปิดงานใหม่</div></div>`;
+  else mountCarousel($('#myCar',root), sorted, openTask);
 };
 
 /* ---------- Manage (จัดการข้อมูลหลัก: หมวด/แผนก/เครื่อง/พนักงาน) ---------- */
