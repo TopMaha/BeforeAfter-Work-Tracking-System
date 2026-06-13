@@ -329,7 +329,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:40;
-  width:min(360px,calc(100% - 24px));height:60px;
+  width:min(430px,calc(100% - 16px));height:60px;
   display:flex;align-items:stretch;
   background:var(--surface);border:1px solid var(--border);
   border-radius:22px;box-shadow:var(--shadow-lg);
@@ -527,6 +527,14 @@ body.desktop-report .view{max-width:1180px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="nlabel">เปิดงาน</span>
   </button>
+  <button class="nav-btn" data-route="manage" title="จัดการข้อมูล" aria-label="จัดการข้อมูล">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.4"/></svg>
+    <span class="nlabel">จัดการ</span>
+  </button>
+  <button class="nav-btn" data-route="profile" title="โปรไฟล์" aria-label="โปรไฟล์">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span class="nlabel">โปรไฟล์</span>
+  </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
     <span class="nlabel">ตั้งค่า</span>
@@ -552,7 +560,7 @@ const CONFIG = {
 /* ออนไลน์อัตโนมัติเมื่อเปิดผ่าน Worker — กันเหตุ API_BASE ว่างแล้วเว็บจริงกลายเป็น Demo
    (เปิดจาก localhost/ไฟล์ตรง = Demo ตามเดิม) */
 if(!CONFIG.API_BASE && /\.workers\.dev$/i.test(location.hostname)) CONFIG.API_BASE = location.origin;
-const APP_VER = "v26";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v27";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -871,8 +879,8 @@ function closeModal(){ modalBack.classList.remove('show'); document.body.style.o
 modalBack.addEventListener('click',e=>{ if(e.target===modalBack && Date.now()-_modalOpenedAt>350) closeModal(); });
 
 /* ======================= ROUTER ======================= */
-const ROUTES = ['dashboard','add','settings'];
-const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',settings:'ตั้งค่า'};
+const ROUTES = ['dashboard','add','manage','profile','settings'];
+const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',manage:'จัดการข้อมูล',profile:'โปรไฟล์',settings:'ตั้งค่า'};
 let current='dashboard';
 
 function go(route){
@@ -902,7 +910,7 @@ $('#nav').addEventListener('click',e=>{ if(Date.now()-_navSwipedAt<350) return;
   const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
 /* ปัดซ้าย/ขวา "เฉพาะบนแถบเมนู" เพื่อสลับหน้า — ปัดบนเนื้อหา = เลื่อนเนื้อหา ไม่เปลี่ยนหน้า */
 (function swipeNav(){
-  const ORDER=['dashboard','add','settings']; let sx=0,sy=0,st=0,ok=false;
+  const ORDER=['dashboard','add','manage','profile','settings']; let sx=0,sy=0,st=0,ok=false;
   const nav=$('#nav');
   nav.addEventListener('touchstart',e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true; },{passive:true});
   nav.addEventListener('touchend',e=>{ if(!ok)return; ok=false;
@@ -1676,8 +1684,36 @@ async function printReport(arr){
   window.print();
 }
 
-/* ---------- Settings ---------- */
-VIEWS.settings = (root)=>{
+/* ---------- Profile (โปรไฟล์ผู้ใช้ที่ล็อกอิน) ---------- */
+VIEWS.profile = (root)=>{
+  const mine=S.tasks.filter(x=>x.createdBy===ME.id);
+  const open=mine.filter(x=>x.status==='open').length, closed=mine.filter(x=>x.status==='closed').length,
+    over=mine.filter(isOverdue).length;
+  const sorted=mine.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  root.innerHTML=`
+    <div class="card" style="padding:18px;display:flex;align-items:center;gap:14px">
+      <div style="width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-weight:800;color:#fff;font-size:24px;
+        background:linear-gradient(135deg,var(--blue-500),var(--blue-700));flex-shrink:0">${esc(ME.name.trim().charAt(0))}</div>
+      <div style="min-width:0"><div style="font-size:19px;font-weight:800">${esc(ME.name)}</div>
+        <div style="font-size:13px;color:var(--text-2)">รหัสพนักงาน ${esc(ME.code)}</div></div>
+    </div>
+    <div class="section-title">สรุปงานที่ฉันส่ง</div>
+    <div class="stat-grid">
+      ${statCard('s-pending',mine.length,'ส่งทั้งหมด','<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>')}
+      ${statCard('s-open',open,'รอแก้ไข','<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/>')}
+      ${statCard('s-closed',closed,'เสร็จแล้ว','<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/>')}
+      ${statCard('s-overdue',over,'เกินกำหนด','<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>')}
+    </div>
+    <div class="section-title">รายการที่ฉันส่ง (${mine.length})</div>
+    <div id="myList"></div>`;
+  const host=$('#myList',root);
+  if(!sorted.length) host.appendChild(el(`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><b>ยังไม่มีรายการที่คุณส่ง</b><div style="font-size:13px">กดปุ่ม + เปิดงานใหม่</div></div>`));
+  else sorted.forEach(t=>host.appendChild(taskCard(t)));
+  hydrateAll(host);
+};
+
+/* ---------- Manage (จัดการข้อมูลหลัก: หมวด/แผนก/เครื่อง/พนักงาน) ---------- */
+VIEWS.manage = (root)=>{
   root.innerHTML=`
     <div class="section-title">หมวดหมู่</div>
     <div class="card"><div id="catList"></div>
@@ -1699,14 +1735,6 @@ VIEWS.settings = (root)=>{
       </div>
     </div>
 
-    <div class="section-title">ทั่วไป</div>
-    <div class="card" style="padding:8px">
-      <div class="lrow"><div class="li-main"><b>โหมดธีม</b><span>สลับกลางวัน/กลางคืน</span></div>
-        <button class="btn btn-ghost" id="setTheme" style="padding:8px 14px">${S.theme==='dark'?'🌙 มืด':'☀️ สว่าง'}</button></div>
-      <div class="lrow"><div class="li-main"><b>ออกจากระบบ</b><span>${esc(ME.name)}</span></div>
-        <button class="btn btn-danger" id="doLogout" style="padding:8px 14px">ออก</button></div>
-    </div>
-
     <div class="section-title">พนักงาน (whitelist)</div>
     <div class="card">
       <button type="button" class="lrow" id="empToggle" style="width:100%;background:none;text-align:left;border-radius:18px 18px 0 0">
@@ -1723,24 +1751,25 @@ VIEWS.settings = (root)=>{
         <div style="padding:12px"><button class="btn btn-soft" id="addUser" style="width:100%">+ เพิ่มพนักงาน</button></div>
       </div>
     </div>
-    <div id="storeInfo" style="text-align:center;color:var(--text-3);font-size:12px;margin:14px 0 2px"></div>
-    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:6px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>
-  `;
+    <div id="storeInfo" style="text-align:center;color:var(--text-3);font-size:12px;margin:14px 0 6px"></div>`;
   // พื้นที่จัดเก็บรูป (online)
   if(!DEMO){ api('/api/storage').then(s=>{ const mb=(s.bytes/1048576).toFixed(1), pct=((s.bytes/s.quotaBytes)*100).toFixed(2);
       const e2=$('#storeInfo',root); if(e2) e2.innerHTML=`🗄️ พื้นที่จัดเก็บรูป: <b>${mb} MB</b> (${s.count} ไฟล์ · ใช้ไป ${pct}% ของโควตาฟรี 10GB)`;
     }).catch(()=>{}); }
+  // categories
+  const cl=$('#catList',root);
+  S.categories.forEach(c=> cl.appendChild(el(`<div class="lrow"><span class="dot-color" style="background:${c.color}"></span>
+    <div class="li-main"><b>${esc(c.name)}</b></div><button class="sw-mini" data-edit="${c.id}">✎</button></div>`)) );
+  cl.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editCat(b.dataset.edit));
+  $('#addCat',root).onclick=()=>editCat(null);
   // users (collapsible + search)
   const ul=$('#userList',root);
-  function renderUsers(q=''){
-    q=q.trim().toLowerCase();
+  function renderUsers(q=''){ q=q.trim().toLowerCase();
     const list=S.users.filter(u=>!q || (u.name+' '+u.code).toLowerCase().includes(q));
     ul.innerHTML='';
     if(!list.length){ ul.appendChild(el(`<div style="padding:18px;text-align:center;color:var(--text-3);font-size:13px">ไม่พบพนักงาน</div>`)); return; }
-    list.forEach(u=>{ const row=el(`<div class="lrow"><div class="li-main"><b>${esc(u.name)}</b><span>รหัส ${esc(u.code)}</span></div>
-      <button class="sw-mini">✎</button></div>`);
-      row.querySelector('.sw-mini').onclick=()=>editUser(u.id); ul.appendChild(row); });
-  }
+    list.forEach(u=>{ const row=el(`<div class="lrow"><div class="li-main"><b>${esc(u.name)}</b><span>รหัส ${esc(u.code)}</span></div><button class="sw-mini">✎</button></div>`);
+      row.querySelector('.sw-mini').onclick=()=>editUser(u.id); ul.appendChild(row); }); }
   renderUsers();
   $('#empSearch',root).addEventListener('input',e=>renderUsers(e.target.value));
   $('#addUser',root).onclick=()=>editUser(null);
@@ -1748,15 +1777,6 @@ VIEWS.settings = (root)=>{
   $('#empToggle',root).onclick=()=>{ const open=panel.style.display!=='none';
     panel.style.display=open?'none':'block'; chev.style.transform=open?'':'rotate(180deg)';
     if(!open) setTimeout(()=>$('#empSearch',root).focus(),50); };
-  // categories
-  const cl=$('#catList',root);
-  S.categories.forEach(c=> cl.appendChild(el(`<div class="lrow"><span class="dot-color" style="background:${c.color}"></span>
-    <div class="li-main"><b>${esc(c.name)}</b></div><button class="sw-mini" data-edit="${c.id}">✎</button></div>`)) );
-  cl.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editCat(b.dataset.edit));
-  $('#addCat',root).onclick=()=>editCat(null);
-  // general
-  $('#setTheme',root).onclick=()=>{ applyTheme(S.theme==='dark'?'light':'dark'); go('settings'); };
-  $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
   // แผนก & หมายเลขเครื่อง
   const renderTags=(elId,list,onDel)=>{ const w=$('#'+elId,root); w.innerHTML='';
     if(!list.length){ w.innerHTML='<span style="color:var(--text-3);font-size:13px">— ยังไม่มี —</span>'; return; }
@@ -1776,6 +1796,21 @@ VIEWS.settings = (root)=>{
     if((S.machines||[]).includes(v)){ toast('มีเครื่องนี้แล้ว','err'); return; }
     await DATA.saveConfig({machines:[...(S.machines||[]),v]}); save(); $('#mcNew',root).value=''; drawDM(); toast('เพิ่มเครื่องแล้ว','ok'); };
 };
+
+/* ---------- Settings (เหลือแค่ทั่วไป) ---------- */
+VIEWS.settings = (root)=>{
+  root.innerHTML=`
+    <div class="section-title">ทั่วไป</div>
+    <div class="card" style="padding:8px">
+      <div class="lrow"><div class="li-main"><b>โหมดธีม</b><span>สลับกลางวัน/กลางคืน</span></div>
+        <button class="btn btn-ghost" id="setTheme" style="padding:8px 14px">${S.theme==='dark'?'🌙 มืด':'☀️ สว่าง'}</button></div>
+      <div class="lrow"><div class="li-main"><b>ออกจากระบบ</b><span>${esc(ME.name)}</span></div>
+        <button class="btn btn-danger" id="doLogout" style="padding:8px 14px">ออก</button></div>
+    </div>
+    <div style="text-align:center;color:var(--text-3);font-size:12px;margin:18px 0 6px">${CONFIG.APP_NAME} · ${DEMO?'Demo':'Online'} · <b style="color:var(--primary)">${APP_VER}</b></div>`;
+  $('#setTheme',root).onclick=()=>{ applyTheme(S.theme==='dark'?'light':'dark'); go('settings'); };
+  $('#doLogout',root).onclick=()=>{ if(confirm('ออกจากระบบ?')) logout(); };
+};
 function editUser(id){
   const u=id?userById(id):{id:null,code:'',name:'',role:'staff',lineUserId:''};
   openModal(`<h3>${id?'แก้ไข':'เพิ่ม'}พนักงาน</h3><div class="sub">รายชื่อ whitelist ที่เข้าระบบได้</div>
@@ -1788,10 +1823,10 @@ function editUser(id){
     if(!name||!code){ toast('กรอกชื่อและรหัส','err'); return; }
     if(S.users.some(x=>x.code===code && x.id!==id)){ toast('รหัสนี้ถูกใช้แล้ว','err'); return; }
     try{ await DATA.saveUser({ id:id||undefined, code, name, role:'staff', lineUserId:$('#u-line').value.trim() });
-      closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); }
+      closeModal(); toast('บันทึกแล้ว','ok'); go('manage'); }
     catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
   const d=$('#delUser'); if(d) d.onclick=async()=>{ if(!confirm('ลบผู้ใช้นี้?'))return;
-    try{ await DATA.delUser(id); closeModal(); toast('ลบแล้ว','info'); go('settings'); }
+    try{ await DATA.delUser(id); closeModal(); toast('ลบแล้ว','info'); go('manage'); }
     catch(e){ toast('ลบไม่สำเร็จ','err'); } };
 }
 function editCat(id){
@@ -1803,11 +1838,11 @@ function editCat(id){
     ${id?'<button class="btn btn-danger" id="delCat" style="width:100%;margin-top:10px">ลบหมวด</button>':''}`);
   $('#saveCat').onclick=async()=>{ const name=$('#c-name').value.trim(); if(!name){ toast('กรอกชื่อหมวด','err'); return; }
     try{ await DATA.saveCat({ id:id||undefined, name, color:$('#c-color').value });
-      closeModal(); toast('บันทึกแล้ว','ok'); go('settings'); }
+      closeModal(); toast('บันทึกแล้ว','ok'); go('manage'); }
     catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message,'err'); } };
   const d=$('#delCat'); if(d) d.onclick=async()=>{ if(S.tasks.some(t=>t.category===id)){ toast('มีงานใช้หมวดนี้อยู่ ลบไม่ได้','err'); return; }
     if(!confirm('ลบหมวดนี้?'))return;
-    try{ await DATA.delCat(id); closeModal(); toast('ลบแล้ว','info'); go('settings'); }
+    try{ await DATA.delCat(id); closeModal(); toast('ลบแล้ว','info'); go('manage'); }
     catch(e){ toast('ลบไม่สำเร็จ','err'); } };
 }
 
@@ -1847,8 +1882,7 @@ $('#refreshBtn').onclick=async()=>{ const sv=$('#refreshBtn svg'); sv.classList.
   try{ if(!DEMO) await DATA.refresh(); go(current); toast('อัปเดตข้อมูลล่าสุดแล้ว','ok'); }
   catch(e){ toast('โหลดไม่สำเร็จ','err'); }
   finally{ setTimeout(()=>sv.classList.remove('spin'),400); } };
-$('#meBtn').onclick=()=>{ openModal(`<h3>${esc(ME.name)}</h3><div class="sub">รหัสพนักงาน ${esc(ME.code)}</div>
-  <button class="btn btn-danger" id="lo" style="width:100%">ออกจากระบบ</button>`); $('#lo').onclick=logout; };
+$('#meBtn').onclick=()=>go('profile');
 
 /* ======================= BOOT ======================= */
 applyTheme(S.theme||'light');
