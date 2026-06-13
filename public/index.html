@@ -523,13 +523,13 @@ body.desktop-report .view{max-width:1180px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
     <span class="nlabel">หน้าหลัก</span>
   </button>
+  <button class="nav-btn" data-route="manage" title="รายการ" aria-label="รายการ">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.4"/></svg>
+    <span class="nlabel">รายการ</span>
+  </button>
   <button class="nav-btn" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="nlabel">เปิดงาน</span>
-  </button>
-  <button class="nav-btn" data-route="manage" title="จัดการข้อมูล" aria-label="จัดการข้อมูล">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.4"/></svg>
-    <span class="nlabel">จัดการ</span>
   </button>
   <button class="nav-btn" data-route="profile" title="โปรไฟล์" aria-label="โปรไฟล์">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
@@ -560,7 +560,7 @@ const CONFIG = {
 /* ออนไลน์อัตโนมัติเมื่อเปิดผ่าน Worker — กันเหตุ API_BASE ว่างแล้วเว็บจริงกลายเป็น Demo
    (เปิดจาก localhost/ไฟล์ตรง = Demo ตามเดิม) */
 if(!CONFIG.API_BASE && /\.workers\.dev$/i.test(location.hostname)) CONFIG.API_BASE = location.origin;
-const APP_VER = "v27";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v28";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -879,8 +879,8 @@ function closeModal(){ modalBack.classList.remove('show'); document.body.style.o
 modalBack.addEventListener('click',e=>{ if(e.target===modalBack && Date.now()-_modalOpenedAt>350) closeModal(); });
 
 /* ======================= ROUTER ======================= */
-const ROUTES = ['dashboard','add','manage','profile','settings'];
-const TITLES = {dashboard:'หน้าหลัก',add:'เปิดงานใหม่',manage:'จัดการข้อมูล',profile:'โปรไฟล์',settings:'ตั้งค่า'};
+const ROUTES = ['dashboard','manage','add','profile','settings'];
+const TITLES = {dashboard:'หน้าหลัก',manage:'รายการ',add:'เปิดงานใหม่',profile:'โปรไฟล์',settings:'ตั้งค่า'};
 let current='dashboard';
 
 function go(route){
@@ -910,7 +910,7 @@ $('#nav').addEventListener('click',e=>{ if(Date.now()-_navSwipedAt<350) return;
   const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
 /* ปัดซ้าย/ขวา "เฉพาะบนแถบเมนู" เพื่อสลับหน้า — ปัดบนเนื้อหา = เลื่อนเนื้อหา ไม่เปลี่ยนหน้า */
 (function swipeNav(){
-  const ORDER=['dashboard','add','manage','profile','settings']; let sx=0,sy=0,st=0,ok=false;
+  const ORDER=['dashboard','manage','add','profile','settings']; let sx=0,sy=0,st=0,ok=false;
   const nav=$('#nav');
   nav.addEventListener('touchstart',e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true; },{passive:true});
   nav.addEventListener('touchend',e=>{ if(!ok)return; ok=false;
