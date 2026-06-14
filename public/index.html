@@ -569,7 +569,7 @@ const CONFIG = {
 /* ออนไลน์อัตโนมัติเมื่อเปิดผ่าน Worker — กันเหตุ API_BASE ว่างแล้วเว็บจริงกลายเป็น Demo
    (เปิดจาก localhost/ไฟล์ตรง = Demo ตามเดิม) */
 if(!CONFIG.API_BASE && /\.workers\.dev$/i.test(location.hostname)) CONFIG.API_BASE = location.origin;
-const APP_VER = "v29";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v30";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -1069,7 +1069,8 @@ VIEWS.dashboard = (root)=>{
 /* ---------- Stacked Carousel (deck) — ใช้ทั้งหน้าหลัก + โปรไฟล์ ---------- */
 function mountCarousel(host, tasks, onOpen){
   if(!tasks.length){ host.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; return; }
-  let idx=0;
+  const STEP=120, MAX=tasks.length-1;
+  let pos=0;                              // ตำแหน่งแบบทศนิยม (ลากอิสระได้)
   host.innerHTML=`<div class="carousel" tabindex="0">
       <div class="carousel-stage"></div>
       <button type="button" class="cz-arrow cz-prev" aria-label="ก่อนหน้า">‹</button>
@@ -1081,29 +1082,43 @@ function mountCarousel(host, tasks, onOpen){
   stage.innerHTML=tasks.map((t,i)=>cfCard(t,i)).join('');
   hydrateAll(stage);
   const cards=[...stage.children];
-  function upd(){
-    cards.forEach((c,i)=>{ const o=i-idx, a=Math.abs(o);
-      if(a>2){ c.style.opacity='0'; c.style.pointerEvents='none'; c.style.transform=`translateX(${o<0?-150:150}px) scale(.5)`; c.style.zIndex='0'; c.classList.remove('cz-active'); return; }
+  function apply(animate){
+    const ai=Math.round(pos);
+    cards.forEach((c,i)=>{ const o=i-pos, a=Math.abs(o);
+      c.style.transition = animate ? 'transform .42s var(--ease),opacity .4s var(--ease)' : 'none';
+      if(a>2.6){ c.style.opacity='0'; c.style.pointerEvents='none'; c.style.transform=`translateX(${o<0?-170:170}px) scale(.5)`; c.style.zIndex='0'; c.classList.remove('cz-active'); return; }
       c.style.pointerEvents='auto';
-      const tx=o*112, sc=1-a*0.18, rot=-o*22, tz=-a*130, op=1-a*0.26;
+      const cl=Math.max(-2,Math.min(2,o));
+      const tx=cl*112, sc=1-Math.abs(cl)*0.18, rot=-cl*22, tz=-Math.abs(cl)*130, op=1-Math.abs(cl)*0.26;
       c.style.transform=`translateX(${tx}px) translateZ(${tz}px) rotateY(${rot}deg) scale(${sc.toFixed(3)})`;
-      c.style.opacity=op.toFixed(2); c.style.zIndex=String(100-a); c.classList.toggle('cz-active',o===0); });
-    counter.textContent=`${idx+1} / ${tasks.length}`;
-    prev.disabled=idx<=0; next.disabled=idx>=tasks.length-1;
+      c.style.opacity=op.toFixed(2); c.style.zIndex=String(100-Math.round(Math.abs(cl)*10));
+      c.classList.toggle('cz-active', i===ai); });
+    counter.textContent=`${Math.min(MAX,Math.max(0,ai))+1} / ${tasks.length}`;
+    prev.disabled=ai<=0; next.disabled=ai>=MAX;
   }
-  const go2=(n)=>{ idx=Math.max(0,Math.min(tasks.length-1,n)); upd(); };
-  prev.onclick=()=>go2(idx-1); next.onclick=()=>go2(idx+1);
-  let sx=0,sy=0,sw=false;
-  stage.addEventListener('click',e=>{ if(sw)return; const c=e.target.closest('.cf-card'); if(!c)return;
-    const i=+c.dataset.idx; if(i===idx) onOpen(tasks[idx].id); else go2(i); });
-  car.addEventListener('touchstart',e=>{ const tt=e.touches[0]; sx=tt.clientX; sy=tt.clientY; sw=false; },{passive:true});
-  car.addEventListener('touchmove',e=>{ const tt=e.touches[0]; if(Math.abs(tt.clientX-sx)>8||Math.abs(tt.clientY-sy)>8) sw=true; },{passive:true});
-  car.addEventListener('touchend',e=>{ const tt=e.changedTouches[0], dx=tt.clientX-sx, dy=tt.clientY-sy;
-    if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)){ dx<0?go2(idx+1):go2(idx-1); }
-    setTimeout(()=>{ sw=false; },50); },{passive:true});
-  car.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft')go2(idx-1); else if(e.key==='ArrowRight')go2(idx+1);
-    else if(e.key==='Enter')onOpen(tasks[idx].id); });
-  upd();
+  const settle=(target)=>{ pos=Math.max(0,Math.min(MAX,target)); apply(true); };
+  prev.onclick=()=>settle(Math.round(pos)-1); next.onclick=()=>settle(Math.round(pos)+1);
+  // ลากอิสระ + โมเมนตัม
+  let drag=false, sx=0, sy=0, p0=0, lx=0, lt=0, vel=0, moved=false, horiz=false, decided=false;
+  car.addEventListener('touchstart',e=>{ const t=e.touches[0]; drag=true; sx=lx=t.clientX; sy=t.clientY; p0=pos; lt=Date.now(); vel=0; moved=false; horiz=false; decided=false; },{passive:true});
+  car.addEventListener('touchmove',e=>{ if(!drag)return; const t=e.touches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(!decided && (Math.abs(dx)>6||Math.abs(dy)>6)){ decided=true; horiz=Math.abs(dx)>Math.abs(dy); }
+    if(!horiz) return;                     // แนวตั้ง = ปล่อยให้เลื่อนหน้าจอ
+    moved=true;
+    const now=Date.now(); vel=(t.clientX-lx)/Math.max(1,now-lt); lx=t.clientX; lt=now;
+    pos=Math.max(-0.45,Math.min(MAX+0.45, p0 - dx/STEP));
+    apply(false); },{passive:true});
+  car.addEventListener('touchend',()=>{ if(!drag)return; drag=false;
+    if(!moved) return;                     // เป็นการแตะ → ให้ click จัดการ
+    const mo=Math.max(-8,Math.min(8,(vel/STEP)*150));  // ไหลต่อตามแรงสะบัด (จำกัด ±8 ใบ)
+    settle(Math.round(pos - mo));          // แล้ว snap เข้าใบที่ใกล้สุด
+    setTimeout(()=>{ moved=false; },80); },{passive:true});
+  // แตะ: ใบกลาง=เปิด, ใบข้าง=เลื่อนมากลาง
+  stage.addEventListener('click',e=>{ if(moved)return; const c=e.target.closest('.cf-card'); if(!c)return;
+    const i=+c.dataset.idx, ai=Math.round(pos); if(i===ai) onOpen(tasks[i].id); else settle(i); });
+  car.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft')settle(Math.round(pos)-1); else if(e.key==='ArrowRight')settle(Math.round(pos)+1);
+    else if(e.key==='Enter')onOpen(tasks[Math.round(pos)].id); });
+  apply(false);
 }
 function cfCard(t,i){
   const img=firstKey(t.compare)||firstKey(t.before)||firstKey(t.after);   // การ์ดแสดงรูปแรกรูปเดียว
