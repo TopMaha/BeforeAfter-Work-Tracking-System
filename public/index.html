@@ -325,31 +325,30 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sw-mini:active{transform:scale(.9)}
 .dot-color{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 
-/* ============================ MAGIC NAV (lift bubble) ============================ */
+/* ============================ NAV (water-fill active) ============================ */
 .nav{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:40;
-  width:min(430px,calc(100% - 16px));height:60px;
-  display:flex;align-items:stretch;
+  width:min(430px,calc(100% - 16px));height:62px;
+  display:flex;align-items:stretch;gap:4px;padding:5px;
   background:var(--surface);border:1px solid var(--border);
   border-radius:22px;box-shadow:var(--shadow-lg);
 }
 .nav-indicator{display:none}
-/* วงกลมสีที่เลื่อน + ลอยขึ้นเหนือแถบ */
-.nav-bubble{position:absolute;top:-22px;width:50px;height:50px;border-radius:50%;
+.nav-btn{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border-radius:16px;overflow:hidden;color:var(--text-2);transition:color .45s var(--ease)}
+/* ชั้นน้ำที่ค่อยๆ เติมขึ้นเมื่อเลือก */
+.nav-btn .fill{position:absolute;left:0;right:0;bottom:0;height:0;z-index:0;
   background:linear-gradient(135deg,var(--blue-400),var(--blue-700));
-  box-shadow:0 10px 22px rgba(37,99,235,.5);transition:left .42s var(--ease),opacity .25s;z-index:1;opacity:0}
-.nav-bubble::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:4px solid var(--bg);}
-.nav-btn{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-  color:var(--text-2);transition:color .35s var(--ease)}
-.nav-btn svg{width:25px;height:25px;stroke-width:2.1;transition:transform .42s var(--ease)}
-.nav-btn .nlabel{font-size:10.5px;font-weight:800;opacity:0;transform:translateY(8px);
-  transition:opacity .3s var(--ease),transform .35s var(--ease);position:absolute;bottom:6px}
+  transition:height .6s cubic-bezier(.34,1.2,.5,1)}
+.nav-btn .fill::after{content:"";position:absolute;left:-18%;right:-18%;top:-7px;height:14px;border-radius:50%;
+  background:var(--blue-400)}                       /* ผิวน้ำโค้งๆ */
 .nav-btn.active{color:#fff}
-.nav-btn.active svg{transform:translateY(-24px) scale(1.08)}        /* ไอคอนลอยขึ้นไปอยู่ในวงกลม */
-.nav-btn.active .nlabel{opacity:1;transform:none;color:var(--text)} /* ชื่อโผล่ด้านล่าง */
-.nav-btn:active svg{transform:scale(.85)}
-.nav-btn.active:active svg{transform:translateY(-24px) scale(.98)}
+.nav-btn.active .fill{height:135%}                  /* เติมจนเต็ม (เกินขอบเล็กน้อยให้ผิวน้ำพ้น) */
+.nav-btn svg{position:relative;z-index:1;width:24px;height:24px;stroke-width:2.1;transition:transform .3s var(--ease)}
+.nav-btn .nlabel{position:relative;z-index:1;font-size:10px;font-weight:800}
+.nav-btn.active svg{transform:scale(1.08)}
+.nav-btn:active svg{transform:scale(.86)}
 
 /* ============================ STACKED CAROUSEL (deck) ============================ */
 .carousel{position:relative;height:300px;perspective:1200px;margin:6px 0 2px;touch-action:pan-y;outline:none}
@@ -372,13 +371,6 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .cf-card.cz-active .cf-cap{opacity:1}                /* ชื่อโชว์เฉพาะใบกลาง */
 .cf-cap b{font-size:12px;color:var(--primary)}
 .cf-cap span{display:block;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* ปุ่มลูกศร ‹ › */
-.cz-arrow{position:absolute;top:96px;z-index:120;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
-  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);color:var(--text-2);
-  font-size:22px;font-weight:700;line-height:1;transition:transform .15s,opacity .2s}
-.cz-arrow:active{transform:scale(.88)}
-.cz-arrow[disabled]{opacity:.35;pointer-events:none}
-.cz-prev{left:6px} .cz-next{right:6px}
 .cz-counter{text-align:center;font-size:12.5px;font-weight:700;color:var(--text-2);margin-top:2px}
 .cf-empty{text-align:center;color:var(--text-3);font-weight:700;padding:46px 16px}
 
@@ -527,24 +519,28 @@ body.desktop-report .view{max-width:1180px}
 
 <!-- bottom nav -->
 <nav class="nav" id="nav" style="display:none">
-  <span class="nav-bubble" id="navBubble"></span>
   <button class="nav-btn" data-route="dashboard" title="หน้าหลัก" aria-label="หน้าหลัก">
+    <span class="fill"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1V10"/></svg>
     <span class="nlabel">หน้าหลัก</span>
   </button>
   <button class="nav-btn" data-route="manage" title="รายการ" aria-label="รายการ">
+    <span class="fill"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.4"/></svg>
     <span class="nlabel">รายการ</span>
   </button>
   <button class="nav-btn" data-route="add" title="เปิดงานใหม่" aria-label="เปิดงานใหม่">
+    <span class="fill"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="nlabel">เปิดงาน</span>
   </button>
   <button class="nav-btn" data-route="profile" title="โปรไฟล์" aria-label="โปรไฟล์">
+    <span class="fill"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
     <span class="nlabel">โปรไฟล์</span>
   </button>
   <button class="nav-btn" data-route="settings" title="ตั้งค่า" aria-label="ตั้งค่า">
+    <span class="fill"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.6l-.06-.07a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 6.6V4.5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 21 11h.09a2 2 0 0 1 0 4H21z"/></svg>
     <span class="nlabel">ตั้งค่า</span>
   </button>
@@ -569,7 +565,7 @@ const CONFIG = {
 /* ออนไลน์อัตโนมัติเมื่อเปิดผ่าน Worker — กันเหตุ API_BASE ว่างแล้วเว็บจริงกลายเป็น Demo
    (เปิดจาก localhost/ไฟล์ตรง = Demo ตามเดิม) */
 if(!CONFIG.API_BASE && /\.workers\.dev$/i.test(location.hostname)) CONFIG.API_BASE = location.origin;
-const APP_VER = "v30";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
+const APP_VER = "v31";     // โชว์ในหน้าตั้งค่า เพื่อเช็กว่าได้เวอร์ชันล่าสุด
 const DEMO = !CONFIG.API_BASE;
 
 /* ----------------------------- tiny helpers ----------------------------- */
@@ -904,16 +900,7 @@ function go(route){
 }
 function markNav(route){
   $$('[data-route]').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
-  moveBubble(route); requestAnimationFrame(()=>moveBubble(route));
 }
-function moveBubble(route){
-  const nav=$('#nav'), bub=$('#navBubble'); if(!nav||!bub) return;
-  const btn=nav.querySelector(`.nav-btn[data-route="${route}"]`);
-  if(!btn){ bub.style.opacity=0; return; }
-  const nr=nav.getBoundingClientRect(), br=btn.getBoundingClientRect();
-  bub.style.opacity=1; bub.style.left=(br.left-nr.left + br.width/2 - 25)+'px';
-}
-window.addEventListener('resize',()=>moveBubble(current));
 let _navSwipedAt=0;
 $('#nav').addEventListener('click',e=>{ if(Date.now()-_navSwipedAt<350) return;
   const b=e.target.closest('[data-route]'); if(b) go(b.dataset.route); });
@@ -1070,15 +1057,10 @@ VIEWS.dashboard = (root)=>{
 function mountCarousel(host, tasks, onOpen){
   if(!tasks.length){ host.innerHTML=`<div class="cf-empty">ไม่พบงาน<br><span style="font-size:12px;font-weight:500">ลองเปลี่ยนตัวกรอง/คำค้นหา</span></div>`; return; }
   const STEP=120, MAX=tasks.length-1;
-  let pos=0;                              // ตำแหน่งแบบทศนิยม (ลากอิสระได้)
-  host.innerHTML=`<div class="carousel" tabindex="0">
-      <div class="carousel-stage"></div>
-      <button type="button" class="cz-arrow cz-prev" aria-label="ก่อนหน้า">‹</button>
-      <button type="button" class="cz-arrow cz-next" aria-label="ถัดไป">›</button>
-    </div><div class="cz-counter"></div>`;
+  let pos=0, raf=0;                       // ตำแหน่งแบบทศนิยม (ลากอิสระได้)
+  host.innerHTML=`<div class="carousel" tabindex="0"><div class="carousel-stage"></div></div><div class="cz-counter"></div>`;
   const car=host.querySelector('.carousel'), stage=host.querySelector('.carousel-stage'),
-        counter=host.querySelector('.cz-counter'),
-        prev=host.querySelector('.cz-prev'), next=host.querySelector('.cz-next');
+        counter=host.querySelector('.cz-counter');
   stage.innerHTML=tasks.map((t,i)=>cfCard(t,i)).join('');
   hydrateAll(stage);
   const cards=[...stage.children];
@@ -1086,28 +1068,28 @@ function mountCarousel(host, tasks, onOpen){
     const ai=Math.round(pos);
     cards.forEach((c,i)=>{ const o=i-pos, a=Math.abs(o);
       c.style.transition = animate ? 'transform .42s var(--ease),opacity .4s var(--ease)' : 'none';
-      if(a>2.6){ c.style.opacity='0'; c.style.pointerEvents='none'; c.style.transform=`translateX(${o<0?-170:170}px) scale(.5)`; c.style.zIndex='0'; c.classList.remove('cz-active'); return; }
+      if(a>2.6){ c.style.opacity='0'; c.style.pointerEvents='none'; c.style.transform=`translate3d(${o<0?-170:170}px,0,-220px) scale(.5)`; c.style.zIndex='0'; c.classList.remove('cz-active'); return; }
       c.style.pointerEvents='auto';
       const cl=Math.max(-2,Math.min(2,o));
       const tx=cl*112, sc=1-Math.abs(cl)*0.18, rot=-cl*22, tz=-Math.abs(cl)*130, op=1-Math.abs(cl)*0.26;
-      c.style.transform=`translateX(${tx}px) translateZ(${tz}px) rotateY(${rot}deg) scale(${sc.toFixed(3)})`;
+      c.style.transform=`translate3d(${tx}px,0,${tz}px) rotateY(${rot}deg) scale(${sc.toFixed(3)})`;
       c.style.opacity=op.toFixed(2); c.style.zIndex=String(100-Math.round(Math.abs(cl)*10));
       c.classList.toggle('cz-active', i===ai); });
     counter.textContent=`${Math.min(MAX,Math.max(0,ai))+1} / ${tasks.length}`;
-    prev.disabled=ai<=0; next.disabled=ai>=MAX;
   }
   const settle=(target)=>{ pos=Math.max(0,Math.min(MAX,target)); apply(true); };
-  prev.onclick=()=>settle(Math.round(pos)-1); next.onclick=()=>settle(Math.round(pos)+1);
-  // ลากอิสระ + โมเมนตัม
+  // ลากอิสระ + โมเมนตัม (กันจอเลื่อนแนวตั้งตอนลากแนวนอน → แถบเมนูไม่เด้ง)
   let drag=false, sx=0, sy=0, p0=0, lx=0, lt=0, vel=0, moved=false, horiz=false, decided=false;
   car.addEventListener('touchstart',e=>{ const t=e.touches[0]; drag=true; sx=lx=t.clientX; sy=t.clientY; p0=pos; lt=Date.now(); vel=0; moved=false; horiz=false; decided=false; },{passive:true});
   car.addEventListener('touchmove',e=>{ if(!drag)return; const t=e.touches[0], dx=t.clientX-sx, dy=t.clientY-sy;
     if(!decided && (Math.abs(dx)>6||Math.abs(dy)>6)){ decided=true; horiz=Math.abs(dx)>Math.abs(dy); }
     if(!horiz) return;                     // แนวตั้ง = ปล่อยให้เลื่อนหน้าจอ
+    e.preventDefault();                    // แนวนอน = ล็อกไม่ให้จอเลื่อนขึ้นลง
     moved=true;
     const now=Date.now(); vel=(t.clientX-lx)/Math.max(1,now-lt); lx=t.clientX; lt=now;
     pos=Math.max(-0.45,Math.min(MAX+0.45, p0 - dx/STEP));
-    apply(false); },{passive:true});
+    if(!raf) raf=requestAnimationFrame(()=>{ raf=0; apply(false); });   // throttle ให้ลื่น
+  },{passive:false});
   car.addEventListener('touchend',()=>{ if(!drag)return; drag=false;
     if(!moved) return;                     // เป็นการแตะ → ให้ click จัดการ
     const mo=Math.max(-8,Math.min(8,(vel/STEP)*150));  // ไหลต่อตามแรงสะบัด (จำกัด ±8 ใบ)
